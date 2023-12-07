@@ -1,0 +1,1137 @@
+==========================================================
+Start date : Wed Jun 14 14:52:32 EDT 2023
+Job name : VOC_01-T
+Job ID : 8629363  undefined
+==========================================================
+Results are available in exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed1. Skip this job
+Run this job andsave the output to exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3
+merge_from_file configs/datasets/voc2007_partial.yaml
+Setting fixed seed: 3
+***************
+** Arguments **
+***************
+backbone: 
+config_file: configs/trainers/Caption_tri_wta_soft/rn101.yaml
+dataset_config_file: configs/datasets/voc2007_partial.yaml
+eval_only: False
+head: 
+load_epoch: None
+mode: pos_test_norm
+model_dir: 
+no_train: False
+opts: ['TRAINER.Caption.N_CTX', '21', 'TRAINER.Caption.CSC', 'True', 'TRAINER.Caption.CLASS_TOKEN_POSITION', 'end', 'DATASET.partial_prob', '0.1']
+output_dir: exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3
+resume: 
+root: /projectnb/ivc-ml/pinghu/dataset
+seed: 3
+source_domains: None
+target_domains: None
+trainer: Caption_tri_wta_soft
+transforms: None
+************
+** Config **
+************
+DATALOADER:
+  K_TRANSFORMS: 1
+  NUM_WORKERS: 2
+  RETURN_IMG0: False
+  TEST:
+    BATCH_SIZE: 100
+    SAMPLER: SequentialSampler
+  TRAIN_U:
+    BATCH_SIZE: 32
+    N_DOMAIN: 0
+    N_INS: 16
+    SAME_AS_X: True
+    SAMPLER: RandomSampler
+  TRAIN_X:
+    BATCH_SIZE: 64
+    N_DOMAIN: 0
+    N_INS: 16
+    SAMPLER: RandomSampler
+DATASET:
+  ALL_AS_UNLABELED: False
+  CIFAR_C_LEVEL: 1
+  CIFAR_C_TYPE: 
+  NAME: VOC2007_partial
+  NUM_LABELED: -1
+  NUM_SHOTS: -1
+  ROOT: /projectnb/ivc-ml/pinghu/dataset
+  SAMPLE: 0
+  SOURCE_DOMAINS: ()
+  STL10_FOLD: -1
+  SUBSAMPLE_CLASSES: all
+  TARGET_DOMAINS: ()
+  VAL_PERCENT: 0.1
+  partial_prob: 0.1
+INPUT:
+  COLORJITTER_B: 0.4
+  COLORJITTER_C: 0.4
+  COLORJITTER_H: 0.1
+  COLORJITTER_S: 0.4
+  CROP_PADDING: 4
+  CUTOUT_LEN: 16
+  CUTOUT_N: 1
+  GB_K: 21
+  GB_P: 0.5
+  GN_MEAN: 0.0
+  GN_STD: 0.15
+  INTERPOLATION: bicubic
+  NO_TRANSFORM: False
+  PIXEL_MEAN: [0.48145466, 0.4578275, 0.40821073]
+  PIXEL_STD: [0.26862954, 0.26130258, 0.27577711]
+  RANDAUGMENT_M: 10
+  RANDAUGMENT_N: 2
+  RGS_P: 0.2
+  SIZE: (448, 448)
+  TRANSFORMS: ('random_resized_crop', 'MLC_Policy', 'random_flip', 'normalize')
+  TRANSFORMS_TEST: ('resize', 'normalize')
+  cutout_proportion: 0.4
+  random_resized_crop_scale: (0.5, 1.0)
+MODE: pos_test_norm
+MODEL:
+  BACKBONE:
+    NAME: RN101
+    PRETRAINED: True
+  HEAD:
+    ACTIVATION: relu
+    BN: True
+    DROPOUT: 0.0
+    HIDDEN_LAYERS: ()
+    NAME: 
+  INIT_WEIGHTS: 
+OPTIM:
+  ADAM_BETA1: 0.9
+  ADAM_BETA2: 0.999
+  BASE_LR_MULT: 0.1
+  GAMMA: 0.1
+  LR: 0.005
+  LR_SCHEDULER: cosine
+  MAX_EPOCH: 50
+  MOMENTUM: 0.9
+  NAME: sgd
+  NEW_LAYERS: ()
+  RMSPROP_ALPHA: 0.99
+  SGD_DAMPNING: 0
+  SGD_NESTEROV: False
+  STAGED_LR: False
+  STEPSIZE: (-1,)
+  WARMUP_CONS_LR: 1e-05
+  WARMUP_EPOCH: 1
+  WARMUP_MIN_LR: 1e-05
+  WARMUP_RECOUNT: True
+  WARMUP_TYPE: constant
+  WEIGHT_DECAY: 0.0005
+OUTPUT_DIR: exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3
+RESUME: 
+SEED: 3
+TEST:
+  COMPUTE_CMAT: False
+  EVALUATOR: MLClassification
+  EVALUATOR_ACT: only_local
+  FINAL_MODEL: best_val
+  NO_TEST: False
+  PER_CLASS_RESULT: False
+  SAVE_PREDS: 
+  SPLIT: test
+TRAIN:
+  CHECKPOINT_FREQ: 0
+  COUNT_ITER: train_x
+  Caption_num: 0
+  IF_LEARN_SCALE: False
+  IF_LEARN_spatial_SCALE: False
+  IF_ablation: False
+  LOSSFUNC: dualcoop
+  PRINT_FREQ: 5
+  spatial_SCALE_image: 50
+  spatial_SCALE_text: 50
+TRAINER:
+  CG:
+    ALPHA_D: 0.5
+    ALPHA_F: 0.5
+    EPS_D: 1.0
+    EPS_F: 1.0
+  Caption:
+    CLASS_TOKEN_POSITION: end
+    CSC: True
+    CTX_INIT: 
+    GL_merge_rate: 0.5
+    N_CTX: 21
+    PREC: fp32
+  DAEL:
+    CONF_THRE: 0.95
+    STRONG_TRANSFORMS: ()
+    WEIGHT_U: 0.5
+  DDAIG:
+    ALPHA: 0.5
+    CLAMP: False
+    CLAMP_MAX: 1.0
+    CLAMP_MIN: -1.0
+    G_ARCH: 
+    LMDA: 0.3
+    WARMUP: 0
+  ENTMIN:
+    LMDA: 0.001
+  FIXMATCH:
+    CONF_THRE: 0.95
+    STRONG_TRANSFORMS: ()
+    WEIGHT_U: 1.0
+  M3SDA:
+    LMDA: 0.5
+    N_STEP_F: 4
+  MCD:
+    N_STEP_F: 4
+  MEANTEA:
+    EMA_ALPHA: 0.999
+    RAMPUP: 5
+    WEIGHT_U: 1.0
+  MIXMATCH:
+    MIXUP_BETA: 0.75
+    RAMPUP: 20000
+    TEMP: 2.0
+    WEIGHT_U: 100.0
+  MME:
+    LMDA: 0.1
+  NAME: Caption_tri_wta_soft
+  SE:
+    CONF_THRE: 0.95
+    EMA_ALPHA: 0.999
+    RAMPUP: 300
+USE_CUDA: True
+VERBOSE: True
+VERSION: 1
+Collecting env info ...
+** System info **
+PyTorch version: 1.10.0
+Is debug build: False
+CUDA used to build PyTorch: 11.3
+ROCM used to build PyTorch: N/A
+
+OS: CentOS Linux release 7.9.2009 (Core) (x86_64)
+GCC version: (GCC) 8.3.0
+Clang version: Could not collect
+CMake version: version 2.8.12.2
+Libc version: glibc-2.17
+
+Python version: 3.7.10 (default, Jun  4 2021, 14:48:32)  [GCC 7.5.0] (64-bit runtime)
+Python platform: Linux-3.10.0-1160.90.1.el7.x86_64-x86_64-with-centos-7.9.2009-Core
+Is CUDA available: True
+CUDA runtime version: 11.1.105
+GPU models and configuration: 
+GPU 0: NVIDIA RTX A6000
+GPU 1: NVIDIA RTX A6000
+GPU 2: NVIDIA RTX A6000
+GPU 3: NVIDIA RTX A6000
+GPU 4: NVIDIA RTX A6000
+GPU 5: NVIDIA RTX A6000
+GPU 6: NVIDIA RTX A6000
+GPU 7: NVIDIA RTX A6000
+GPU 8: NVIDIA RTX A6000
+GPU 9: NVIDIA RTX A6000
+
+Nvidia driver version: 525.105.17
+cuDNN version: Could not collect
+HIP runtime version: N/A
+MIOpen runtime version: N/A
+
+Versions of relevant libraries:
+[pip3] numpy==1.21.5
+[pip3] torch==1.10.0
+[pip3] torchaudio==0.10.0
+[pip3] torchvision==0.11.0
+[conda] blas                      1.0                         mkl  
+[conda] cudatoolkit               11.3.1               h2bc3f7f_2  
+[conda] mkl                       2021.4.0           h06a4308_640  
+[conda] mkl-service               2.4.0            py37h7f8727e_0  
+[conda] mkl_fft                   1.3.1            py37hd3c417c_0  
+[conda] mkl_random                1.2.2            py37h51133e4_0  
+[conda] numpy                     1.21.5           py37h6c91a56_3  
+[conda] numpy-base                1.21.5           py37ha15fc14_3  
+[conda] pytorch                   1.10.0          py3.7_cuda11.3_cudnn8.2.0_0    pytorch
+[conda] pytorch-mutex             1.0                        cuda    pytorch
+[conda] torchaudio                0.10.0               py37_cu113    pytorch
+[conda] torchvision               0.11.0               py37_cu113    pytorch
+        Pillow (9.2.0)
+
+Loading trainer: Caption_tri_wta_soft
+Loading dataset: VOC2007_partial
+VOC2007 train total 5011 images, test total 4952 images. 
+Loading partial/VOC2007/partial-labels/train_proportion_0.1.txt
+Building transform_train, more augment
++ random resized crop (size=(448, 448), scale=(0.5, 1.0)), chosen with cutout
++ MLC_Policy 
++ random flip
++ to torch tensor of range [0, 1]
++ normalization (mean=[0.48145466, 0.4578275, 0.40821073], std=[0.26862954, 0.26130258, 0.27577711])
+Building transform_test
+transform_test choices: ('resize', 'normalize')
++ resize the to (448, 448)
++ to torch tensor of range [0, 1]
++ normalization (mean=[0.48145466, 0.4578275, 0.40821073], std=[0.26862954, 0.26130258, 0.27577711])
+***** Dataset statistics *****
+  Dataset: VOC2007_partial
+  # classes: 20
+  # train_x: 5,011
+  # val: 4,952
+  # test: 4,952
+|||||||||||||||||||||||||||||||||||||| Building Caption_dual
+Loading CLIP (backbone: RN101)
+Building custom CLIP
+Initializing class-specific contexts
+Initial context: "X X X X X X X X X X X X X X X X X X X X X"
+Initial negtive context: "X X X X X X X X X X X X X X X X X X X X X"
+Number of context words (tokens): 21
+Turning off gradients in both the image and the text encoder
+Loading evaluator: MLClassification
+No checkpoint found, train from scratch
+Initializing summary writer for tensorboard with log_dir=exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3/tensorboard
+epoch [1/50][5/78]	time 0.384 (1.231)	data 0.000 (0.336)	eta 1:19:55	loss 0.0882 (0.3260)	lr 1.000000e-05
+epoch [1/50][10/78]	time 0.470 (0.816)	data 0.086 (0.177)	eta 0:52:55	loss 0.4417 (0.3501)	lr 1.000000e-05
+epoch [1/50][15/78]	time 0.384 (0.711)	data 0.000 (0.156)	eta 0:46:00	loss 0.3917 (0.3494)	lr 1.000000e-05
+epoch [1/50][20/78]	time 0.600 (0.672)	data 0.216 (0.160)	eta 0:43:26	loss 0.3212 (0.3482)	lr 1.000000e-05
+epoch [1/50][25/78]	time 0.384 (0.638)	data 0.000 (0.151)	eta 0:41:10	loss 0.4339 (0.3608)	lr 1.000000e-05
+epoch [1/50][30/78]	time 0.576 (0.628)	data 0.193 (0.159)	eta 0:40:29	loss 0.3050 (0.3442)	lr 1.000000e-05
+epoch [1/50][35/78]	time 0.392 (0.606)	data 0.000 (0.148)	eta 0:39:00	loss 0.3177 (0.3395)	lr 1.000000e-05
+epoch [1/50][40/78]	time 0.634 (0.595)	data 0.251 (0.147)	eta 0:38:16	loss 0.3109 (0.3383)	lr 1.000000e-05
+epoch [1/50][45/78]	time 0.383 (0.580)	data 0.000 (0.139)	eta 0:37:16	loss 0.2733 (0.3328)	lr 1.000000e-05
+epoch [1/50][50/78]	time 0.614 (0.572)	data 0.231 (0.137)	eta 0:36:41	loss 0.4589 (0.3407)	lr 1.000000e-05
+epoch [1/50][55/78]	time 0.384 (0.564)	data 0.000 (0.133)	eta 0:36:07	loss 0.1430 (0.3361)	lr 1.000000e-05
+epoch [1/50][60/78]	time 0.715 (0.561)	data 0.320 (0.134)	eta 0:35:54	loss 0.2483 (0.3350)	lr 1.000000e-05
+epoch [1/50][65/78]	time 0.385 (0.552)	data 0.000 (0.128)	eta 0:35:16	loss 0.2837 (0.3305)	lr 1.000000e-05
+epoch [1/50][70/78]	time 0.585 (0.549)	data 0.201 (0.127)	eta 0:35:01	loss 0.3262 (0.3294)	lr 1.000000e-05
+epoch [1/50][75/78]	time 0.417 (0.544)	data 0.000 (0.124)	eta 0:34:39	loss 0.2217 (0.3273)	lr 1.000000e-05
+Do evaluation on val set
+mAP score: 44.967451146993774
+Checkpoint saved to "exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3/prompt_learner/model-best.pth.tar"
+epoch [2/50][5/78]	time 0.619 (0.741)	data 0.232 (0.351)	eta 0:47:08	loss 0.1465 (0.2272)	lr 5.000000e-03
+epoch [2/50][10/78]	time 0.387 (0.611)	data 0.000 (0.223)	eta 0:38:49	loss 0.1945 (0.2005)	lr 5.000000e-03
+epoch [2/50][15/78]	time 0.625 (0.615)	data 0.238 (0.227)	eta 0:39:01	loss 0.1416 (0.1892)	lr 5.000000e-03
+epoch [2/50][20/78]	time 0.426 (0.581)	data 0.000 (0.190)	eta 0:36:50	loss 0.0954 (0.1711)	lr 5.000000e-03
+epoch [2/50][25/78]	time 0.555 (0.566)	data 0.167 (0.174)	eta 0:35:49	loss 0.1044 (0.1607)	lr 5.000000e-03
+epoch [2/50][30/78]	time 0.416 (0.552)	data 0.000 (0.158)	eta 0:34:53	loss 0.1822 (0.1618)	lr 5.000000e-03
+epoch [2/50][35/78]	time 0.525 (0.544)	data 0.136 (0.150)	eta 0:34:19	loss 0.0904 (0.1561)	lr 5.000000e-03
+epoch [2/50][40/78]	time 0.410 (0.535)	data 0.000 (0.141)	eta 0:33:43	loss 0.1291 (0.1504)	lr 5.000000e-03
+epoch [2/50][45/78]	time 0.520 (0.531)	data 0.130 (0.137)	eta 0:33:27	loss 0.0720 (0.1456)	lr 5.000000e-03
+epoch [2/50][50/78]	time 0.422 (0.525)	data 0.000 (0.131)	eta 0:33:00	loss 0.0985 (0.1413)	lr 5.000000e-03
+epoch [2/50][55/78]	time 0.481 (0.521)	data 0.093 (0.126)	eta 0:32:43	loss 0.0998 (0.1378)	lr 5.000000e-03
+epoch [2/50][60/78]	time 0.387 (0.516)	data 0.000 (0.122)	eta 0:32:20	loss 0.1068 (0.1354)	lr 5.000000e-03
+epoch [2/50][65/78]	time 0.510 (0.514)	data 0.124 (0.120)	eta 0:32:11	loss 0.0645 (0.1336)	lr 5.000000e-03
+epoch [2/50][70/78]	time 0.388 (0.510)	data 0.000 (0.116)	eta 0:31:53	loss 0.0579 (0.1296)	lr 5.000000e-03
+epoch [2/50][75/78]	time 0.583 (0.509)	data 0.196 (0.115)	eta 0:31:48	loss 0.0455 (0.1258)	lr 5.000000e-03
+Do evaluation on val set
+mAP score: 85.74113352684219
+Checkpoint saved to "exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3/prompt_learner/model-best.pth.tar"
+epoch [3/50][5/78]	time 0.673 (0.762)	data 0.286 (0.373)	eta 0:47:29	loss 0.0881 (0.1033)	lr 4.995067e-03
+epoch [3/50][10/78]	time 0.389 (0.634)	data 0.000 (0.245)	eta 0:39:26	loss 0.0981 (0.0964)	lr 4.995067e-03
+epoch [3/50][15/78]	time 0.538 (0.591)	data 0.145 (0.202)	eta 0:36:44	loss 0.0843 (0.0878)	lr 4.995067e-03
+epoch [3/50][20/78]	time 0.387 (0.560)	data 0.000 (0.172)	eta 0:34:44	loss 0.0842 (0.0954)	lr 4.995067e-03
+epoch [3/50][25/78]	time 0.642 (0.552)	data 0.256 (0.164)	eta 0:34:12	loss 0.0558 (0.0879)	lr 4.995067e-03
+epoch [3/50][30/78]	time 0.417 (0.538)	data 0.000 (0.148)	eta 0:33:18	loss 0.0749 (0.0850)	lr 4.995067e-03
+epoch [3/50][35/78]	time 0.600 (0.536)	data 0.213 (0.145)	eta 0:33:07	loss 0.0470 (0.0826)	lr 4.995067e-03
+epoch [3/50][40/78]	time 0.388 (0.528)	data 0.000 (0.138)	eta 0:32:34	loss 0.0697 (0.0804)	lr 4.995067e-03
+epoch [3/50][45/78]	time 0.644 (0.528)	data 0.257 (0.138)	eta 0:32:31	loss 0.0377 (0.0780)	lr 4.995067e-03
+epoch [3/50][50/78]	time 0.394 (0.524)	data 0.000 (0.133)	eta 0:32:14	loss 0.0226 (0.0761)	lr 4.995067e-03
+epoch [3/50][55/78]	time 0.556 (0.522)	data 0.168 (0.131)	eta 0:32:05	loss 0.0689 (0.0745)	lr 4.995067e-03
+epoch [3/50][60/78]	time 0.388 (0.518)	data 0.000 (0.127)	eta 0:31:46	loss 0.0597 (0.0747)	lr 4.995067e-03
+epoch [3/50][65/78]	time 0.615 (0.518)	data 0.227 (0.127)	eta 0:31:45	loss 0.0800 (0.0757)	lr 4.995067e-03
+epoch [3/50][70/78]	time 0.402 (0.515)	data 0.000 (0.124)	eta 0:31:32	loss 0.0842 (0.0761)	lr 4.995067e-03
+epoch [3/50][75/78]	time 0.615 (0.516)	data 0.224 (0.125)	eta 0:31:34	loss 0.0909 (0.0761)	lr 4.995067e-03
+Do evaluation on val set
+mAP score: 89.90083785091541
+Checkpoint saved to "exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3/prompt_learner/model-best.pth.tar"
+epoch [4/50][5/78]	time 0.658 (0.784)	data 0.271 (0.389)	eta 0:47:50	loss 0.0324 (0.0422)	lr 4.980287e-03
+epoch [4/50][10/78]	time 0.390 (0.653)	data 0.000 (0.261)	eta 0:39:49	loss 0.0858 (0.0544)	lr 4.980287e-03
+epoch [4/50][15/78]	time 0.681 (0.633)	data 0.295 (0.242)	eta 0:38:30	loss 0.0664 (0.0577)	lr 4.980287e-03
+epoch [4/50][20/78]	time 0.392 (0.603)	data 0.000 (0.211)	eta 0:36:37	loss 0.0522 (0.0591)	lr 4.980287e-03
+epoch [4/50][25/78]	time 0.672 (0.597)	data 0.265 (0.204)	eta 0:36:15	loss 0.0672 (0.0608)	lr 4.980287e-03
+epoch [4/50][30/78]	time 0.387 (0.583)	data 0.000 (0.190)	eta 0:35:20	loss 0.0874 (0.0593)	lr 4.980287e-03
+epoch [4/50][35/78]	time 0.682 (0.580)	data 0.275 (0.185)	eta 0:35:05	loss 0.0357 (0.0580)	lr 4.980287e-03
+epoch [4/50][40/78]	time 0.388 (0.568)	data 0.000 (0.173)	eta 0:34:18	loss 0.1151 (0.0594)	lr 4.980287e-03
+epoch [4/50][45/78]	time 0.716 (0.568)	data 0.306 (0.174)	eta 0:34:18	loss 0.0461 (0.0595)	lr 4.980287e-03
+epoch [4/50][50/78]	time 0.387 (0.562)	data 0.000 (0.167)	eta 0:33:52	loss 0.0351 (0.0584)	lr 4.980287e-03
+epoch [4/50][55/78]	time 0.695 (0.564)	data 0.307 (0.170)	eta 0:33:57	loss 0.0251 (0.0572)	lr 4.980287e-03
+epoch [4/50][60/78]	time 0.388 (0.559)	data 0.000 (0.165)	eta 0:33:37	loss 0.0552 (0.0561)	lr 4.980287e-03
+epoch [4/50][65/78]	time 0.585 (0.559)	data 0.198 (0.165)	eta 0:33:33	loss 0.0177 (0.0553)	lr 4.980287e-03
+epoch [4/50][70/78]	time 0.389 (0.555)	data 0.000 (0.161)	eta 0:33:16	loss 0.0371 (0.0555)	lr 4.980287e-03
+epoch [4/50][75/78]	time 0.746 (0.556)	data 0.337 (0.161)	eta 0:33:15	loss 0.0528 (0.0547)	lr 4.980287e-03
+Do evaluation on val set
+mAP score: 91.20937356473307
+Checkpoint saved to "exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3/prompt_learner/model-best.pth.tar"
+epoch [5/50][5/78]	time 0.604 (0.735)	data 0.215 (0.347)	eta 0:43:53	loss 0.0468 (0.0454)	lr 4.955718e-03
+epoch [5/50][10/78]	time 0.388 (0.596)	data 0.000 (0.208)	eta 0:35:33	loss 0.0298 (0.0419)	lr 4.955718e-03
+epoch [5/50][15/78]	time 0.436 (0.566)	data 0.049 (0.178)	eta 0:33:43	loss 0.0629 (0.0462)	lr 4.955718e-03
+epoch [5/50][20/78]	time 0.657 (0.556)	data 0.264 (0.165)	eta 0:33:03	loss 0.0402 (0.0448)	lr 4.955718e-03
+epoch [5/50][25/78]	time 0.388 (0.541)	data 0.000 (0.150)	eta 0:32:07	loss 0.0335 (0.0468)	lr 4.955718e-03
+epoch [5/50][30/78]	time 0.614 (0.537)	data 0.220 (0.146)	eta 0:31:50	loss 0.0863 (0.0494)	lr 4.955718e-03
+epoch [5/50][35/78]	time 0.388 (0.527)	data 0.001 (0.136)	eta 0:31:10	loss 0.0606 (0.0497)	lr 4.955718e-03
+epoch [5/50][40/78]	time 0.594 (0.531)	data 0.204 (0.140)	eta 0:31:22	loss 0.0816 (0.0511)	lr 4.955718e-03
+epoch [5/50][45/78]	time 0.389 (0.525)	data 0.000 (0.133)	eta 0:30:59	loss 0.0588 (0.0503)	lr 4.955718e-03
+epoch [5/50][50/78]	time 0.547 (0.525)	data 0.160 (0.133)	eta 0:30:58	loss 0.0203 (0.0486)	lr 4.955718e-03
+epoch [5/50][55/78]	time 0.418 (0.522)	data 0.000 (0.130)	eta 0:30:43	loss 0.0556 (0.0495)	lr 4.955718e-03
+epoch [5/50][60/78]	time 0.496 (0.520)	data 0.108 (0.127)	eta 0:30:33	loss 0.0547 (0.0507)	lr 4.955718e-03
+epoch [5/50][65/78]	time 0.391 (0.517)	data 0.000 (0.125)	eta 0:30:22	loss 0.0573 (0.0503)	lr 4.955718e-03
+epoch [5/50][70/78]	time 0.632 (0.518)	data 0.244 (0.125)	eta 0:30:22	loss 0.0484 (0.0525)	lr 4.955718e-03
+epoch [5/50][75/78]	time 0.388 (0.514)	data 0.000 (0.122)	eta 0:30:07	loss 0.0180 (0.0510)	lr 4.955718e-03
+Do evaluation on val set
+mAP score: 91.42249792632018
+Checkpoint saved to "exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3/prompt_learner/model-best.pth.tar"
+epoch [6/50][5/78]	time 0.583 (0.750)	data 0.196 (0.360)	eta 0:43:47	loss 0.0817 (0.0534)	lr 4.921458e-03
+epoch [6/50][10/78]	time 0.389 (0.628)	data 0.000 (0.240)	eta 0:36:38	loss 0.0521 (0.0509)	lr 4.921458e-03
+epoch [6/50][15/78]	time 0.599 (0.596)	data 0.210 (0.208)	eta 0:34:43	loss 0.0403 (0.0494)	lr 4.921458e-03
+epoch [6/50][20/78]	time 0.388 (0.568)	data 0.000 (0.179)	eta 0:33:00	loss 0.1567 (0.0533)	lr 4.921458e-03
+epoch [6/50][25/78]	time 0.590 (0.561)	data 0.202 (0.172)	eta 0:32:33	loss 0.0329 (0.0520)	lr 4.921458e-03
+epoch [6/50][30/78]	time 0.388 (0.543)	data 0.000 (0.155)	eta 0:31:28	loss 0.0448 (0.0521)	lr 4.921458e-03
+epoch [6/50][35/78]	time 0.583 (0.538)	data 0.188 (0.149)	eta 0:31:08	loss 0.0173 (0.0517)	lr 4.921458e-03
+epoch [6/50][40/78]	time 0.388 (0.528)	data 0.000 (0.140)	eta 0:30:32	loss 0.0470 (0.0515)	lr 4.921458e-03
+epoch [6/50][45/78]	time 0.627 (0.527)	data 0.240 (0.139)	eta 0:30:25	loss 0.0355 (0.0511)	lr 4.921458e-03
+epoch [6/50][50/78]	time 0.387 (0.520)	data 0.000 (0.131)	eta 0:29:58	loss 0.0437 (0.0525)	lr 4.921458e-03
+epoch [6/50][55/78]	time 0.388 (0.518)	data 0.000 (0.128)	eta 0:29:48	loss 0.0647 (0.0538)	lr 4.921458e-03
+epoch [6/50][60/78]	time 0.565 (0.517)	data 0.170 (0.127)	eta 0:29:43	loss 0.0419 (0.0531)	lr 4.921458e-03
+epoch [6/50][65/78]	time 0.388 (0.515)	data 0.000 (0.124)	eta 0:29:32	loss 0.0246 (0.0516)	lr 4.921458e-03
+epoch [6/50][70/78]	time 0.634 (0.515)	data 0.247 (0.124)	eta 0:29:33	loss 0.0370 (0.0513)	lr 4.921458e-03
+epoch [6/50][75/78]	time 0.389 (0.512)	data 0.000 (0.121)	eta 0:29:19	loss 0.0824 (0.0538)	lr 4.921458e-03
+Do evaluation on val set
+mAP score: 91.5759243859041
+Checkpoint saved to "exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3/prompt_learner/model-best.pth.tar"
+epoch [7/50][5/78]	time 0.561 (0.739)	data 0.173 (0.349)	eta 0:42:13	loss 0.0402 (0.0501)	lr 4.877641e-03
+epoch [7/50][10/78]	time 0.389 (0.634)	data 0.000 (0.244)	eta 0:36:08	loss 0.0164 (0.0574)	lr 4.877641e-03
+epoch [7/50][15/78]	time 0.614 (0.596)	data 0.227 (0.206)	eta 0:33:56	loss 0.1084 (0.0585)	lr 4.877641e-03
+epoch [7/50][20/78]	time 0.388 (0.564)	data 0.000 (0.175)	eta 0:32:04	loss 0.0490 (0.0543)	lr 4.877641e-03
+epoch [7/50][25/78]	time 0.580 (0.553)	data 0.192 (0.164)	eta 0:31:23	loss 0.0706 (0.0546)	lr 4.877641e-03
+epoch [7/50][30/78]	time 0.387 (0.540)	data 0.000 (0.151)	eta 0:30:38	loss 0.0409 (0.0519)	lr 4.877641e-03
+epoch [7/50][35/78]	time 0.572 (0.535)	data 0.184 (0.146)	eta 0:30:16	loss 0.0319 (0.0522)	lr 4.877641e-03
+epoch [7/50][40/78]	time 0.388 (0.527)	data 0.000 (0.137)	eta 0:29:45	loss 0.0910 (0.0531)	lr 4.877641e-03
+epoch [7/50][45/78]	time 0.500 (0.522)	data 0.113 (0.133)	eta 0:29:26	loss 0.0427 (0.0521)	lr 4.877641e-03
+epoch [7/50][50/78]	time 0.389 (0.515)	data 0.000 (0.126)	eta 0:29:02	loss 0.0615 (0.0521)	lr 4.877641e-03
+epoch [7/50][55/78]	time 0.559 (0.514)	data 0.172 (0.125)	eta 0:28:54	loss 0.0648 (0.0519)	lr 4.877641e-03
+epoch [7/50][60/78]	time 0.396 (0.510)	data 0.000 (0.121)	eta 0:28:38	loss 0.0635 (0.0511)	lr 4.877641e-03
+epoch [7/50][65/78]	time 0.593 (0.510)	data 0.205 (0.121)	eta 0:28:36	loss 0.0322 (0.0498)	lr 4.877641e-03
+epoch [7/50][70/78]	time 0.395 (0.505)	data 0.000 (0.116)	eta 0:28:18	loss 0.0291 (0.0496)	lr 4.877641e-03
+epoch [7/50][75/78]	time 0.585 (0.505)	data 0.196 (0.115)	eta 0:28:13	loss 0.0388 (0.0505)	lr 4.877641e-03
+Do evaluation on val set
+mAP score: 91.75280362828666
+Checkpoint saved to "exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3/prompt_learner/model-best.pth.tar"
+epoch [8/50][5/78]	time 0.698 (0.756)	data 0.300 (0.365)	eta 0:42:11	loss 0.0264 (0.0337)	lr 4.824441e-03
+epoch [8/50][10/78]	time 0.387 (0.625)	data 0.000 (0.235)	eta 0:34:49	loss 0.0156 (0.0350)	lr 4.824441e-03
+epoch [8/50][15/78]	time 0.567 (0.597)	data 0.178 (0.208)	eta 0:33:13	loss 0.0874 (0.0420)	lr 4.824441e-03
+epoch [8/50][20/78]	time 0.391 (0.572)	data 0.000 (0.183)	eta 0:31:47	loss 0.0167 (0.0389)	lr 4.824441e-03
+epoch [8/50][25/78]	time 0.639 (0.561)	data 0.252 (0.171)	eta 0:31:07	loss 0.0378 (0.0412)	lr 4.824441e-03
+epoch [8/50][30/78]	time 0.413 (0.546)	data 0.000 (0.156)	eta 0:30:16	loss 0.0520 (0.0445)	lr 4.824441e-03
+epoch [8/50][35/78]	time 0.578 (0.541)	data 0.190 (0.150)	eta 0:29:55	loss 0.0649 (0.0443)	lr 4.824441e-03
+epoch [8/50][40/78]	time 0.388 (0.534)	data 0.000 (0.143)	eta 0:29:30	loss 0.0694 (0.0433)	lr 4.824441e-03
+epoch [8/50][45/78]	time 0.592 (0.532)	data 0.205 (0.141)	eta 0:29:21	loss 0.0928 (0.0472)	lr 4.824441e-03
+epoch [8/50][50/78]	time 0.388 (0.527)	data 0.000 (0.137)	eta 0:29:02	loss 0.0689 (0.0474)	lr 4.824441e-03
+epoch [8/50][55/78]	time 0.581 (0.527)	data 0.194 (0.136)	eta 0:28:59	loss 0.0354 (0.0468)	lr 4.824441e-03
+epoch [8/50][60/78]	time 0.388 (0.525)	data 0.000 (0.133)	eta 0:28:48	loss 0.1015 (0.0467)	lr 4.824441e-03
+epoch [8/50][65/78]	time 0.602 (0.525)	data 0.214 (0.134)	eta 0:28:45	loss 0.0647 (0.0482)	lr 4.824441e-03
+epoch [8/50][70/78]	time 0.387 (0.522)	data 0.000 (0.131)	eta 0:28:33	loss 0.0352 (0.0475)	lr 4.824441e-03
+epoch [8/50][75/78]	time 0.564 (0.521)	data 0.175 (0.131)	eta 0:28:29	loss 0.0303 (0.0482)	lr 4.824441e-03
+Do evaluation on val set
+mAP score: 91.66738051854452
+epoch [9/50][5/78]	time 0.643 (0.727)	data 0.256 (0.339)	eta 0:39:36	loss 0.0349 (0.0342)	lr 4.762068e-03
+epoch [9/50][10/78]	time 0.388 (0.590)	data 0.000 (0.202)	eta 0:32:07	loss 0.0322 (0.0298)	lr 4.762068e-03
+epoch [9/50][15/78]	time 0.551 (0.561)	data 0.155 (0.172)	eta 0:30:29	loss 0.0340 (0.0321)	lr 4.762068e-03
+epoch [9/50][20/78]	time 0.388 (0.537)	data 0.000 (0.149)	eta 0:29:10	loss 0.0724 (0.0353)	lr 4.762068e-03
+epoch [9/50][25/78]	time 0.551 (0.530)	data 0.163 (0.141)	eta 0:28:43	loss 0.0371 (0.0361)	lr 4.762068e-03
+epoch [9/50][30/78]	time 0.388 (0.522)	data 0.000 (0.133)	eta 0:28:14	loss 0.0925 (0.0391)	lr 4.762068e-03
+epoch [9/50][35/78]	time 0.609 (0.517)	data 0.222 (0.129)	eta 0:27:56	loss 0.0560 (0.0389)	lr 4.762068e-03
+epoch [9/50][40/78]	time 0.393 (0.511)	data 0.000 (0.122)	eta 0:27:32	loss 0.0688 (0.0395)	lr 4.762068e-03
+epoch [9/50][45/78]	time 0.590 (0.511)	data 0.202 (0.122)	eta 0:27:31	loss 0.0368 (0.0414)	lr 4.762068e-03
+epoch [9/50][50/78]	time 0.388 (0.507)	data 0.000 (0.118)	eta 0:27:16	loss 0.0423 (0.0409)	lr 4.762068e-03
+epoch [9/50][55/78]	time 0.594 (0.506)	data 0.204 (0.116)	eta 0:27:08	loss 0.0594 (0.0414)	lr 4.762068e-03
+epoch [9/50][60/78]	time 0.391 (0.501)	data 0.000 (0.111)	eta 0:26:50	loss 0.0280 (0.0404)	lr 4.762068e-03
+epoch [9/50][65/78]	time 0.594 (0.501)	data 0.205 (0.112)	eta 0:26:49	loss 0.0675 (0.0404)	lr 4.762068e-03
+epoch [9/50][70/78]	time 0.390 (0.498)	data 0.000 (0.109)	eta 0:26:36	loss 0.0410 (0.0404)	lr 4.762068e-03
+epoch [9/50][75/78]	time 0.705 (0.502)	data 0.317 (0.113)	eta 0:26:46	loss 0.1056 (0.0418)	lr 4.762068e-03
+Do evaluation on val set
+mAP score: 91.89251984647807
+Checkpoint saved to "exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3/prompt_learner/model-best.pth.tar"
+epoch [10/50][5/78]	time 0.518 (0.701)	data 0.130 (0.312)	eta 0:37:18	loss 0.0272 (0.0490)	lr 4.690767e-03
+epoch [10/50][10/78]	time 0.389 (0.589)	data 0.000 (0.194)	eta 0:31:17	loss 0.0777 (0.0421)	lr 4.690767e-03
+epoch [10/50][15/78]	time 0.509 (0.558)	data 0.116 (0.164)	eta 0:29:36	loss 0.0507 (0.0442)	lr 4.690767e-03
+epoch [10/50][20/78]	time 0.587 (0.546)	data 0.173 (0.152)	eta 0:28:56	loss 0.0242 (0.0410)	lr 4.690767e-03
+epoch [10/50][25/78]	time 0.388 (0.529)	data 0.000 (0.134)	eta 0:27:58	loss 0.0379 (0.0404)	lr 4.690767e-03
+epoch [10/50][30/78]	time 0.546 (0.524)	data 0.157 (0.130)	eta 0:27:38	loss 0.0403 (0.0398)	lr 4.690767e-03
+epoch [10/50][35/78]	time 0.388 (0.514)	data 0.000 (0.121)	eta 0:27:06	loss 0.0690 (0.0401)	lr 4.690767e-03
+epoch [10/50][40/78]	time 0.551 (0.511)	data 0.164 (0.119)	eta 0:26:54	loss 0.0353 (0.0396)	lr 4.690767e-03
+epoch [10/50][45/78]	time 0.388 (0.504)	data 0.000 (0.113)	eta 0:26:30	loss 0.0419 (0.0392)	lr 4.690767e-03
+epoch [10/50][50/78]	time 0.640 (0.507)	data 0.251 (0.116)	eta 0:26:36	loss 0.0451 (0.0396)	lr 4.690767e-03
+epoch [10/50][55/78]	time 0.388 (0.504)	data 0.000 (0.113)	eta 0:26:24	loss 0.0459 (0.0391)	lr 4.690767e-03
+epoch [10/50][60/78]	time 0.543 (0.504)	data 0.156 (0.113)	eta 0:26:21	loss 0.0286 (0.0393)	lr 4.690767e-03
+epoch [10/50][65/78]	time 0.387 (0.500)	data 0.000 (0.109)	eta 0:26:06	loss 0.0542 (0.0395)	lr 4.690767e-03
+epoch [10/50][70/78]	time 0.579 (0.499)	data 0.191 (0.109)	eta 0:26:02	loss 0.0576 (0.0403)	lr 4.690767e-03
+epoch [10/50][75/78]	time 0.388 (0.496)	data 0.000 (0.106)	eta 0:25:49	loss 0.0260 (0.0398)	lr 4.690767e-03
+Do evaluation on val set
+mAP score: 92.11469438083301
+Checkpoint saved to "exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3/prompt_learner/model-best.pth.tar"
+epoch [11/50][5/78]	time 0.709 (0.766)	data 0.321 (0.377)	eta 0:39:44	loss 0.0306 (0.0358)	lr 4.610820e-03
+epoch [11/50][10/78]	time 0.388 (0.638)	data 0.000 (0.250)	eta 0:33:05	loss 0.0655 (0.0393)	lr 4.610820e-03
+epoch [11/50][15/78]	time 0.701 (0.619)	data 0.314 (0.231)	eta 0:32:00	loss 0.0557 (0.0399)	lr 4.610820e-03
+epoch [11/50][20/78]	time 0.393 (0.592)	data 0.000 (0.203)	eta 0:30:34	loss 0.0898 (0.0401)	lr 4.610820e-03
+epoch [11/50][25/78]	time 0.697 (0.590)	data 0.306 (0.202)	eta 0:30:27	loss 0.0381 (0.0395)	lr 4.610820e-03
+epoch [11/50][30/78]	time 0.388 (0.583)	data 0.000 (0.194)	eta 0:30:00	loss 0.0379 (0.0380)	lr 4.610820e-03
+epoch [11/50][35/78]	time 0.709 (0.585)	data 0.321 (0.197)	eta 0:30:04	loss 0.0431 (0.0383)	lr 4.610820e-03
+epoch [11/50][40/78]	time 0.388 (0.574)	data 0.000 (0.186)	eta 0:29:29	loss 0.0460 (0.0378)	lr 4.610820e-03
+epoch [11/50][45/78]	time 0.667 (0.573)	data 0.278 (0.185)	eta 0:29:23	loss 0.0302 (0.0379)	lr 4.610820e-03
+epoch [11/50][50/78]	time 0.387 (0.568)	data 0.000 (0.179)	eta 0:29:02	loss 0.0197 (0.0387)	lr 4.610820e-03
+epoch [11/50][55/78]	time 0.726 (0.568)	data 0.339 (0.180)	eta 0:29:01	loss 0.0716 (0.0387)	lr 4.610820e-03
+epoch [11/50][60/78]	time 0.388 (0.561)	data 0.000 (0.172)	eta 0:28:37	loss 0.0721 (0.0398)	lr 4.610820e-03
+epoch [11/50][65/78]	time 0.685 (0.563)	data 0.297 (0.174)	eta 0:28:40	loss 0.0233 (0.0396)	lr 4.610820e-03
+epoch [11/50][70/78]	time 0.388 (0.559)	data 0.000 (0.170)	eta 0:28:23	loss 0.0797 (0.0401)	lr 4.610820e-03
+epoch [11/50][75/78]	time 0.665 (0.560)	data 0.278 (0.170)	eta 0:28:24	loss 0.0594 (0.0405)	lr 4.610820e-03
+Do evaluation on val set
+mAP score: 92.23554310920757
+Checkpoint saved to "exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3/prompt_learner/model-best.pth.tar"
+epoch [12/50][5/78]	time 0.727 (0.742)	data 0.340 (0.354)	eta 0:37:34	loss 0.0403 (0.0536)	lr 4.522542e-03
+epoch [12/50][10/78]	time 0.387 (0.608)	data 0.000 (0.221)	eta 0:30:44	loss 0.0270 (0.0492)	lr 4.522542e-03
+epoch [12/50][15/78]	time 0.643 (0.577)	data 0.256 (0.189)	eta 0:29:07	loss 0.0357 (0.0469)	lr 4.522542e-03
+epoch [12/50][20/78]	time 0.388 (0.553)	data 0.000 (0.162)	eta 0:27:50	loss 0.0268 (0.0445)	lr 4.522542e-03
+epoch [12/50][25/78]	time 0.577 (0.543)	data 0.189 (0.153)	eta 0:27:18	loss 0.0517 (0.0420)	lr 4.522542e-03
+epoch [12/50][30/78]	time 0.388 (0.530)	data 0.000 (0.140)	eta 0:26:35	loss 0.1307 (0.0440)	lr 4.522542e-03
+epoch [12/50][35/78]	time 0.562 (0.528)	data 0.175 (0.138)	eta 0:26:26	loss 0.0904 (0.0448)	lr 4.522542e-03
+epoch [12/50][40/78]	time 0.388 (0.521)	data 0.000 (0.131)	eta 0:26:04	loss 0.0366 (0.0445)	lr 4.522542e-03
+epoch [12/50][45/78]	time 0.561 (0.522)	data 0.174 (0.130)	eta 0:26:02	loss 0.0198 (0.0430)	lr 4.522542e-03
+epoch [12/50][50/78]	time 0.389 (0.518)	data 0.000 (0.126)	eta 0:25:50	loss 0.0369 (0.0451)	lr 4.522542e-03
+epoch [12/50][55/78]	time 0.679 (0.519)	data 0.293 (0.127)	eta 0:25:49	loss 0.0524 (0.0455)	lr 4.522542e-03
+epoch [12/50][60/78]	time 0.388 (0.517)	data 0.000 (0.125)	eta 0:25:41	loss 0.0406 (0.0453)	lr 4.522542e-03
+epoch [12/50][65/78]	time 0.696 (0.519)	data 0.281 (0.127)	eta 0:25:45	loss 0.0221 (0.0439)	lr 4.522542e-03
+epoch [12/50][70/78]	time 0.388 (0.515)	data 0.000 (0.122)	eta 0:25:29	loss 0.0215 (0.0443)	lr 4.522542e-03
+epoch [12/50][75/78]	time 0.604 (0.516)	data 0.215 (0.123)	eta 0:25:29	loss 0.0203 (0.0438)	lr 4.522542e-03
+Do evaluation on val set
+mAP score: 92.26319888552392
+Checkpoint saved to "exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3/prompt_learner/model-best.pth.tar"
+epoch [13/50][5/78]	time 0.522 (0.713)	data 0.135 (0.320)	eta 0:35:09	loss 0.0330 (0.0326)	lr 4.426283e-03
+epoch [13/50][10/78]	time 0.531 (0.591)	data 0.143 (0.201)	eta 0:29:06	loss 0.0141 (0.0370)	lr 4.426283e-03
+epoch [13/50][15/78]	time 0.388 (0.560)	data 0.000 (0.171)	eta 0:27:31	loss 0.0726 (0.0367)	lr 4.426283e-03
+epoch [13/50][20/78]	time 0.716 (0.559)	data 0.329 (0.170)	eta 0:27:24	loss 0.0212 (0.0379)	lr 4.426283e-03
+epoch [13/50][25/78]	time 0.389 (0.547)	data 0.000 (0.157)	eta 0:26:48	loss 0.0559 (0.0412)	lr 4.426283e-03
+epoch [13/50][30/78]	time 0.636 (0.549)	data 0.221 (0.157)	eta 0:26:50	loss 0.0367 (0.0387)	lr 4.426283e-03
+epoch [13/50][35/78]	time 0.388 (0.541)	data 0.000 (0.150)	eta 0:26:23	loss 0.0151 (0.0407)	lr 4.426283e-03
+epoch [13/50][40/78]	time 0.678 (0.548)	data 0.264 (0.157)	eta 0:26:43	loss 0.0566 (0.0429)	lr 4.426283e-03
+epoch [13/50][45/78]	time 0.388 (0.542)	data 0.000 (0.150)	eta 0:26:21	loss 0.0305 (0.0423)	lr 4.426283e-03
+epoch [13/50][50/78]	time 0.725 (0.543)	data 0.311 (0.151)	eta 0:26:22	loss 0.0505 (0.0413)	lr 4.426283e-03
+epoch [13/50][55/78]	time 0.389 (0.538)	data 0.000 (0.145)	eta 0:26:03	loss 0.0599 (0.0412)	lr 4.426283e-03
+epoch [13/50][60/78]	time 0.664 (0.539)	data 0.250 (0.146)	eta 0:26:06	loss 0.0375 (0.0404)	lr 4.426283e-03
+epoch [13/50][65/78]	time 0.388 (0.536)	data 0.000 (0.142)	eta 0:25:54	loss 0.0496 (0.0397)	lr 4.426283e-03
+epoch [13/50][70/78]	time 0.692 (0.538)	data 0.304 (0.144)	eta 0:25:57	loss 0.0476 (0.0395)	lr 4.426283e-03
+epoch [13/50][75/78]	time 0.387 (0.536)	data 0.000 (0.142)	eta 0:25:49	loss 0.0593 (0.0399)	lr 4.426283e-03
+Do evaluation on val set
+mAP score: 92.25823500226029
+epoch [14/50][5/78]	time 0.570 (0.744)	data 0.183 (0.355)	eta 0:35:42	loss 0.0096 (0.0424)	lr 4.322422e-03
+epoch [14/50][10/78]	time 0.388 (0.624)	data 0.000 (0.233)	eta 0:29:53	loss 0.0315 (0.0367)	lr 4.322422e-03
+epoch [14/50][15/78]	time 0.582 (0.587)	data 0.194 (0.197)	eta 0:28:05	loss 0.0138 (0.0363)	lr 4.322422e-03
+epoch [14/50][20/78]	time 0.387 (0.556)	data 0.000 (0.166)	eta 0:26:32	loss 0.0305 (0.0349)	lr 4.322422e-03
+epoch [14/50][25/78]	time 0.570 (0.546)	data 0.183 (0.156)	eta 0:26:01	loss 0.0438 (0.0352)	lr 4.322422e-03
+epoch [14/50][30/78]	time 0.387 (0.534)	data 0.000 (0.144)	eta 0:25:24	loss 0.0138 (0.0342)	lr 4.322422e-03
+epoch [14/50][35/78]	time 0.603 (0.533)	data 0.213 (0.143)	eta 0:25:18	loss 0.0326 (0.0346)	lr 4.322422e-03
+epoch [14/50][40/78]	time 0.394 (0.524)	data 0.000 (0.135)	eta 0:24:51	loss 0.0156 (0.0337)	lr 4.322422e-03
+epoch [14/50][45/78]	time 0.575 (0.540)	data 0.180 (0.151)	eta 0:25:34	loss 0.0235 (0.0334)	lr 4.322422e-03
+epoch [14/50][50/78]	time 0.388 (0.533)	data 0.000 (0.143)	eta 0:25:12	loss 0.0402 (0.0334)	lr 4.322422e-03
+epoch [14/50][55/78]	time 0.592 (0.531)	data 0.203 (0.141)	eta 0:25:03	loss 0.0637 (0.0341)	lr 4.322422e-03
+epoch [14/50][60/78]	time 0.389 (0.525)	data 0.000 (0.135)	eta 0:24:43	loss 0.0339 (0.0345)	lr 4.322422e-03
+epoch [14/50][65/78]	time 0.613 (0.523)	data 0.223 (0.134)	eta 0:24:36	loss 0.0668 (0.0344)	lr 4.322422e-03
+epoch [14/50][70/78]	time 0.394 (0.519)	data 0.000 (0.130)	eta 0:24:22	loss 0.0262 (0.0345)	lr 4.322422e-03
+epoch [14/50][75/78]	time 0.596 (0.519)	data 0.202 (0.129)	eta 0:24:19	loss 0.0305 (0.0356)	lr 4.322422e-03
+Do evaluation on val set
+mAP score: 92.14371815557541
+epoch [15/50][5/78]	time 0.633 (0.734)	data 0.243 (0.345)	eta 0:34:16	loss 0.0294 (0.0487)	lr 4.211368e-03
+epoch [15/50][10/78]	time 0.390 (0.601)	data 0.000 (0.213)	eta 0:28:01	loss 0.0506 (0.0407)	lr 4.211368e-03
+epoch [15/50][15/78]	time 0.592 (0.571)	data 0.204 (0.183)	eta 0:26:35	loss 0.0330 (0.0411)	lr 4.211368e-03
+epoch [15/50][20/78]	time 0.397 (0.544)	data 0.000 (0.156)	eta 0:25:17	loss 0.0510 (0.0418)	lr 4.211368e-03
+epoch [15/50][25/78]	time 0.574 (0.531)	data 0.180 (0.142)	eta 0:24:38	loss 0.0247 (0.0424)	lr 4.211368e-03
+epoch [15/50][30/78]	time 0.388 (0.521)	data 0.000 (0.131)	eta 0:24:06	loss 0.0454 (0.0440)	lr 4.211368e-03
+epoch [15/50][35/78]	time 0.602 (0.517)	data 0.206 (0.127)	eta 0:23:53	loss 0.0398 (0.0423)	lr 4.211368e-03
+epoch [15/50][40/78]	time 0.388 (0.510)	data 0.000 (0.120)	eta 0:23:30	loss 0.0241 (0.0420)	lr 4.211368e-03
+epoch [15/50][45/78]	time 0.529 (0.510)	data 0.141 (0.121)	eta 0:23:30	loss 0.0258 (0.0417)	lr 4.211368e-03
+epoch [15/50][50/78]	time 0.399 (0.507)	data 0.000 (0.117)	eta 0:23:17	loss 0.0199 (0.0399)	lr 4.211368e-03
+epoch [15/50][55/78]	time 0.578 (0.507)	data 0.190 (0.118)	eta 0:23:16	loss 0.0154 (0.0397)	lr 4.211368e-03
+epoch [15/50][60/78]	time 0.388 (0.503)	data 0.000 (0.113)	eta 0:23:02	loss 0.0235 (0.0387)	lr 4.211368e-03
+epoch [15/50][65/78]	time 0.543 (0.502)	data 0.155 (0.112)	eta 0:22:56	loss 0.0189 (0.0392)	lr 4.211368e-03
+epoch [15/50][70/78]	time 0.513 (0.500)	data 0.123 (0.110)	eta 0:22:49	loss 0.0320 (0.0389)	lr 4.211368e-03
+epoch [15/50][75/78]	time 0.433 (0.498)	data 0.046 (0.108)	eta 0:22:41	loss 0.0274 (0.0390)	lr 4.211368e-03
+Do evaluation on val set
+mAP score: 92.33471010535759
+Checkpoint saved to "exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3/prompt_learner/model-best.pth.tar"
+epoch [16/50][5/78]	time 0.665 (0.772)	data 0.277 (0.382)	eta 0:35:03	loss 0.0129 (0.0325)	lr 4.093560e-03
+epoch [16/50][10/78]	time 0.388 (0.611)	data 0.000 (0.216)	eta 0:27:41	loss 0.0191 (0.0302)	lr 4.093560e-03
+epoch [16/50][15/78]	time 0.606 (0.577)	data 0.217 (0.184)	eta 0:26:07	loss 0.0148 (0.0284)	lr 4.093560e-03
+epoch [16/50][20/78]	time 0.388 (0.549)	data 0.000 (0.157)	eta 0:24:47	loss 0.0892 (0.0339)	lr 4.093560e-03
+epoch [16/50][25/78]	time 0.572 (0.540)	data 0.185 (0.149)	eta 0:24:20	loss 0.0360 (0.0330)	lr 4.093560e-03
+epoch [16/50][30/78]	time 0.389 (0.527)	data 0.000 (0.137)	eta 0:23:43	loss 0.0223 (0.0336)	lr 4.093560e-03
+epoch [16/50][35/78]	time 0.601 (0.519)	data 0.214 (0.129)	eta 0:23:19	loss 0.0185 (0.0331)	lr 4.093560e-03
+epoch [16/50][40/78]	time 0.391 (0.517)	data 0.000 (0.127)	eta 0:23:09	loss 0.0354 (0.0325)	lr 4.093560e-03
+epoch [16/50][45/78]	time 0.544 (0.513)	data 0.157 (0.124)	eta 0:22:58	loss 0.0796 (0.0339)	lr 4.093560e-03
+epoch [16/50][50/78]	time 0.388 (0.507)	data 0.000 (0.118)	eta 0:22:39	loss 0.0433 (0.0358)	lr 4.093560e-03
+epoch [16/50][55/78]	time 0.494 (0.505)	data 0.107 (0.114)	eta 0:22:29	loss 0.0342 (0.0358)	lr 4.093560e-03
+epoch [16/50][60/78]	time 0.388 (0.501)	data 0.000 (0.110)	eta 0:22:18	loss 0.0341 (0.0363)	lr 4.093560e-03
+epoch [16/50][65/78]	time 0.520 (0.499)	data 0.132 (0.108)	eta 0:22:10	loss 0.0225 (0.0356)	lr 4.093560e-03
+epoch [16/50][70/78]	time 0.388 (0.496)	data 0.000 (0.105)	eta 0:22:00	loss 0.0158 (0.0363)	lr 4.093560e-03
+epoch [16/50][75/78]	time 0.563 (0.495)	data 0.176 (0.104)	eta 0:21:55	loss 0.0281 (0.0360)	lr 4.093560e-03
+Do evaluation on val set
+mAP score: 92.27220047374513
+epoch [17/50][5/78]	time 0.769 (0.763)	data 0.376 (0.373)	eta 0:33:38	loss 0.0292 (0.0454)	lr 3.969463e-03
+epoch [17/50][10/78]	time 0.388 (0.634)	data 0.000 (0.245)	eta 0:27:54	loss 0.0473 (0.0358)	lr 3.969463e-03
+epoch [17/50][15/78]	time 0.637 (0.603)	data 0.249 (0.215)	eta 0:26:30	loss 0.0382 (0.0374)	lr 3.969463e-03
+epoch [17/50][20/78]	time 0.388 (0.579)	data 0.000 (0.189)	eta 0:25:24	loss 0.0163 (0.0348)	lr 3.969463e-03
+epoch [17/50][25/78]	time 0.662 (0.571)	data 0.274 (0.180)	eta 0:25:00	loss 0.0478 (0.0351)	lr 3.969463e-03
+epoch [17/50][30/78]	time 0.388 (0.557)	data 0.000 (0.163)	eta 0:24:20	loss 0.0209 (0.0328)	lr 3.969463e-03
+epoch [17/50][35/78]	time 0.598 (0.551)	data 0.211 (0.159)	eta 0:24:02	loss 0.0182 (0.0324)	lr 3.969463e-03
+epoch [17/50][40/78]	time 0.388 (0.544)	data 0.000 (0.151)	eta 0:23:41	loss 0.0380 (0.0346)	lr 3.969463e-03
+epoch [17/50][45/78]	time 0.634 (0.541)	data 0.248 (0.148)	eta 0:23:29	loss 0.0698 (0.0354)	lr 3.969463e-03
+epoch [17/50][50/78]	time 0.387 (0.536)	data 0.000 (0.144)	eta 0:23:13	loss 0.0326 (0.0356)	lr 3.969463e-03
+epoch [17/50][55/78]	time 0.646 (0.538)	data 0.258 (0.146)	eta 0:23:16	loss 0.0245 (0.0348)	lr 3.969463e-03
+epoch [17/50][60/78]	time 0.388 (0.532)	data 0.000 (0.140)	eta 0:23:00	loss 0.0429 (0.0351)	lr 3.969463e-03
+epoch [17/50][65/78]	time 0.625 (0.532)	data 0.237 (0.140)	eta 0:22:55	loss 0.0260 (0.0351)	lr 3.969463e-03
+epoch [17/50][70/78]	time 0.414 (0.529)	data 0.000 (0.137)	eta 0:22:46	loss 0.0471 (0.0352)	lr 3.969463e-03
+epoch [17/50][75/78]	time 0.606 (0.528)	data 0.218 (0.136)	eta 0:22:40	loss 0.0481 (0.0344)	lr 3.969463e-03
+Do evaluation on val set
+mAP score: 92.34195347129808
+Checkpoint saved to "exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3/prompt_learner/model-best.pth.tar"
+epoch [18/50][5/78]	time 0.571 (0.753)	data 0.184 (0.364)	eta 0:32:13	loss 0.0125 (0.0243)	lr 3.839567e-03
+epoch [18/50][10/78]	time 0.425 (0.630)	data 0.000 (0.238)	eta 0:26:55	loss 0.0220 (0.0212)	lr 3.839567e-03
+epoch [18/50][15/78]	time 0.548 (0.589)	data 0.161 (0.193)	eta 0:25:06	loss 0.0199 (0.0204)	lr 3.839567e-03
+epoch [18/50][20/78]	time 0.389 (0.560)	data 0.000 (0.166)	eta 0:23:49	loss 0.0518 (0.0221)	lr 3.839567e-03
+epoch [18/50][25/78]	time 0.573 (0.550)	data 0.185 (0.157)	eta 0:23:22	loss 0.0145 (0.0225)	lr 3.839567e-03
+epoch [18/50][30/78]	time 0.387 (0.535)	data 0.000 (0.143)	eta 0:22:41	loss 0.0354 (0.0264)	lr 3.839567e-03
+epoch [18/50][35/78]	time 0.568 (0.530)	data 0.177 (0.138)	eta 0:22:24	loss 0.0244 (0.0287)	lr 3.839567e-03
+epoch [18/50][40/78]	time 0.388 (0.523)	data 0.000 (0.131)	eta 0:22:04	loss 0.0185 (0.0293)	lr 3.839567e-03
+epoch [18/50][45/78]	time 0.550 (0.519)	data 0.162 (0.127)	eta 0:21:51	loss 0.0335 (0.0326)	lr 3.839567e-03
+epoch [18/50][50/78]	time 0.416 (0.514)	data 0.000 (0.122)	eta 0:21:37	loss 0.0249 (0.0333)	lr 3.839567e-03
+epoch [18/50][55/78]	time 0.485 (0.509)	data 0.098 (0.118)	eta 0:21:22	loss 0.1180 (0.0360)	lr 3.839567e-03
+epoch [18/50][60/78]	time 0.423 (0.505)	data 0.000 (0.113)	eta 0:21:09	loss 0.0457 (0.0369)	lr 3.839567e-03
+epoch [18/50][65/78]	time 0.501 (0.503)	data 0.114 (0.111)	eta 0:21:00	loss 0.0209 (0.0369)	lr 3.839567e-03
+epoch [18/50][70/78]	time 0.388 (0.499)	data 0.000 (0.107)	eta 0:20:49	loss 0.0298 (0.0365)	lr 3.839567e-03
+epoch [18/50][75/78]	time 0.518 (0.497)	data 0.130 (0.106)	eta 0:20:43	loss 0.0926 (0.0373)	lr 3.839567e-03
+Do evaluation on val set
+mAP score: 92.50337675643175
+Checkpoint saved to "exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3/prompt_learner/model-best.pth.tar"
+epoch [19/50][5/78]	time 0.779 (0.779)	data 0.385 (0.388)	eta 0:32:20	loss 0.0192 (0.0221)	lr 3.704384e-03
+epoch [19/50][10/78]	time 0.390 (0.633)	data 0.000 (0.243)	eta 0:26:14	loss 0.0167 (0.0260)	lr 3.704384e-03
+epoch [19/50][15/78]	time 0.676 (0.601)	data 0.287 (0.212)	eta 0:24:51	loss 0.0642 (0.0310)	lr 3.704384e-03
+epoch [19/50][20/78]	time 0.388 (0.574)	data 0.000 (0.185)	eta 0:23:41	loss 0.0353 (0.0348)	lr 3.704384e-03
+epoch [19/50][25/78]	time 0.640 (0.568)	data 0.253 (0.179)	eta 0:23:24	loss 0.0363 (0.0340)	lr 3.704384e-03
+epoch [19/50][30/78]	time 0.395 (0.556)	data 0.000 (0.166)	eta 0:22:50	loss 0.0450 (0.0341)	lr 3.704384e-03
+epoch [19/50][35/78]	time 0.622 (0.552)	data 0.235 (0.163)	eta 0:22:39	loss 0.0368 (0.0341)	lr 3.704384e-03
+epoch [19/50][40/78]	time 0.388 (0.543)	data 0.000 (0.154)	eta 0:22:14	loss 0.0509 (0.0346)	lr 3.704384e-03
+epoch [19/50][45/78]	time 0.647 (0.542)	data 0.260 (0.153)	eta 0:22:08	loss 0.0482 (0.0348)	lr 3.704384e-03
+epoch [19/50][50/78]	time 0.388 (0.535)	data 0.000 (0.145)	eta 0:21:47	loss 0.0069 (0.0346)	lr 3.704384e-03
+epoch [19/50][55/78]	time 0.572 (0.534)	data 0.185 (0.145)	eta 0:21:43	loss 0.0145 (0.0341)	lr 3.704384e-03
+epoch [19/50][60/78]	time 0.395 (0.530)	data 0.000 (0.141)	eta 0:21:31	loss 0.0104 (0.0332)	lr 3.704384e-03
+epoch [19/50][65/78]	time 0.599 (0.530)	data 0.212 (0.141)	eta 0:21:28	loss 0.0116 (0.0332)	lr 3.704384e-03
+epoch [19/50][70/78]	time 0.387 (0.527)	data 0.000 (0.138)	eta 0:21:18	loss 0.0085 (0.0324)	lr 3.704384e-03
+epoch [19/50][75/78]	time 0.623 (0.528)	data 0.235 (0.139)	eta 0:21:18	loss 0.0306 (0.0327)	lr 3.704384e-03
+Do evaluation on val set
+mAP score: 92.2085200867268
+epoch [20/50][5/78]	time 0.493 (0.764)	data 0.104 (0.375)	eta 0:30:43	loss 0.0512 (0.0385)	lr 3.564448e-03
+epoch [20/50][10/78]	time 0.387 (0.628)	data 0.000 (0.239)	eta 0:25:11	loss 0.0154 (0.0329)	lr 3.564448e-03
+epoch [20/50][15/78]	time 0.587 (0.587)	data 0.194 (0.198)	eta 0:23:29	loss 0.0157 (0.0290)	lr 3.564448e-03
+epoch [20/50][20/78]	time 0.449 (0.560)	data 0.061 (0.171)	eta 0:22:23	loss 0.0410 (0.0335)	lr 3.564448e-03
+epoch [20/50][25/78]	time 0.640 (0.555)	data 0.218 (0.164)	eta 0:22:08	loss 0.0317 (0.0322)	lr 3.564448e-03
+epoch [20/50][30/78]	time 0.449 (0.543)	data 0.061 (0.151)	eta 0:21:35	loss 0.0326 (0.0325)	lr 3.564448e-03
+epoch [20/50][35/78]	time 0.515 (0.538)	data 0.127 (0.147)	eta 0:21:22	loss 0.0330 (0.0328)	lr 3.564448e-03
+epoch [20/50][40/78]	time 0.445 (0.532)	data 0.057 (0.141)	eta 0:21:05	loss 0.0265 (0.0317)	lr 3.564448e-03
+epoch [20/50][45/78]	time 0.507 (0.529)	data 0.117 (0.137)	eta 0:20:54	loss 0.0270 (0.0313)	lr 3.564448e-03
+epoch [20/50][50/78]	time 0.550 (0.525)	data 0.162 (0.134)	eta 0:20:43	loss 0.0167 (0.0316)	lr 3.564448e-03
+epoch [20/50][55/78]	time 0.540 (0.523)	data 0.150 (0.132)	eta 0:20:35	loss 0.0475 (0.0312)	lr 3.564448e-03
+epoch [20/50][60/78]	time 0.432 (0.520)	data 0.045 (0.129)	eta 0:20:26	loss 0.0206 (0.0321)	lr 3.564448e-03
+epoch [20/50][65/78]	time 0.507 (0.519)	data 0.119 (0.128)	eta 0:20:20	loss 0.0096 (0.0310)	lr 3.564448e-03
+epoch [20/50][70/78]	time 0.445 (0.517)	data 0.057 (0.126)	eta 0:20:13	loss 0.0613 (0.0310)	lr 3.564448e-03
+epoch [20/50][75/78]	time 0.428 (0.515)	data 0.040 (0.124)	eta 0:20:06	loss 0.0444 (0.0314)	lr 3.564448e-03
+Do evaluation on val set
+mAP score: 92.51006483688691
+Checkpoint saved to "exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3/prompt_learner/model-best.pth.tar"
+epoch [21/50][5/78]	time 0.580 (0.758)	data 0.193 (0.368)	eta 0:29:30	loss 0.0365 (0.0357)	lr 3.420311e-03
+epoch [21/50][10/78]	time 0.387 (0.623)	data 0.000 (0.234)	eta 0:24:11	loss 0.0226 (0.0360)	lr 3.420311e-03
+epoch [21/50][15/78]	time 0.682 (0.602)	data 0.295 (0.213)	eta 0:23:18	loss 0.0240 (0.0354)	lr 3.420311e-03
+epoch [21/50][20/78]	time 0.388 (0.572)	data 0.000 (0.183)	eta 0:22:06	loss 0.0523 (0.0351)	lr 3.420311e-03
+epoch [21/50][25/78]	time 0.624 (0.564)	data 0.234 (0.175)	eta 0:21:46	loss 0.0381 (0.0350)	lr 3.420311e-03
+epoch [21/50][30/78]	time 0.413 (0.552)	data 0.000 (0.160)	eta 0:21:14	loss 0.0492 (0.0359)	lr 3.420311e-03
+epoch [21/50][35/78]	time 0.688 (0.551)	data 0.300 (0.159)	eta 0:21:09	loss 0.0097 (0.0332)	lr 3.420311e-03
+epoch [21/50][40/78]	time 0.388 (0.545)	data 0.000 (0.154)	eta 0:20:53	loss 0.0219 (0.0336)	lr 3.420311e-03
+epoch [21/50][45/78]	time 0.655 (0.545)	data 0.268 (0.154)	eta 0:20:50	loss 0.0637 (0.0332)	lr 3.420311e-03
+epoch [21/50][50/78]	time 0.387 (0.539)	data 0.000 (0.148)	eta 0:20:34	loss 0.0240 (0.0340)	lr 3.420311e-03
+epoch [21/50][55/78]	time 0.602 (0.539)	data 0.213 (0.149)	eta 0:20:32	loss 0.0388 (0.0350)	lr 3.420311e-03
+epoch [21/50][60/78]	time 0.388 (0.536)	data 0.000 (0.145)	eta 0:20:22	loss 0.0665 (0.0358)	lr 3.420311e-03
+epoch [21/50][65/78]	time 0.647 (0.538)	data 0.260 (0.147)	eta 0:20:23	loss 0.0484 (0.0359)	lr 3.420311e-03
+epoch [21/50][70/78]	time 0.387 (0.535)	data 0.000 (0.144)	eta 0:20:14	loss 0.0791 (0.0368)	lr 3.420311e-03
+epoch [21/50][75/78]	time 0.579 (0.534)	data 0.191 (0.143)	eta 0:20:09	loss 0.0218 (0.0362)	lr 3.420311e-03
+Do evaluation on val set
+mAP score: 92.43447930044519
+epoch [22/50][5/78]	time 0.707 (0.775)	data 0.321 (0.388)	eta 0:29:09	loss 0.0097 (0.0178)	lr 3.272542e-03
+epoch [22/50][10/78]	time 0.393 (0.641)	data 0.000 (0.254)	eta 0:24:04	loss 0.0200 (0.0233)	lr 3.272542e-03
+epoch [22/50][15/78]	time 0.643 (0.619)	data 0.255 (0.232)	eta 0:23:11	loss 0.0214 (0.0279)	lr 3.272542e-03
+epoch [22/50][20/78]	time 0.394 (0.594)	data 0.000 (0.206)	eta 0:22:12	loss 0.0356 (0.0296)	lr 3.272542e-03
+epoch [22/50][25/78]	time 0.637 (0.585)	data 0.249 (0.197)	eta 0:21:48	loss 0.0421 (0.0294)	lr 3.272542e-03
+epoch [22/50][30/78]	time 0.387 (0.571)	data 0.000 (0.184)	eta 0:21:15	loss 0.0231 (0.0285)	lr 3.272542e-03
+epoch [22/50][35/78]	time 0.864 (0.576)	data 0.450 (0.187)	eta 0:21:23	loss 0.0076 (0.0305)	lr 3.272542e-03
+epoch [22/50][40/78]	time 0.415 (0.572)	data 0.000 (0.182)	eta 0:21:11	loss 0.0289 (0.0315)	lr 3.272542e-03
+epoch [22/50][45/78]	time 0.695 (0.569)	data 0.308 (0.180)	eta 0:21:01	loss 0.0621 (0.0320)	lr 3.272542e-03
+epoch [22/50][50/78]	time 0.388 (0.564)	data 0.000 (0.174)	eta 0:20:47	loss 0.0701 (0.0327)	lr 3.272542e-03
+epoch [22/50][55/78]	time 0.652 (0.562)	data 0.264 (0.172)	eta 0:20:40	loss 0.0418 (0.0324)	lr 3.272542e-03
+epoch [22/50][60/78]	time 0.388 (0.556)	data 0.000 (0.167)	eta 0:20:25	loss 0.0261 (0.0327)	lr 3.272542e-03
+epoch [22/50][65/78]	time 0.662 (0.556)	data 0.274 (0.166)	eta 0:20:22	loss 0.0291 (0.0339)	lr 3.272542e-03
+epoch [22/50][70/78]	time 0.390 (0.552)	data 0.000 (0.162)	eta 0:20:10	loss 0.0174 (0.0343)	lr 3.272542e-03
+epoch [22/50][75/78]	time 0.563 (0.554)	data 0.176 (0.164)	eta 0:20:11	loss 0.0165 (0.0340)	lr 3.272542e-03
+Do evaluation on val set
+mAP score: 92.54361387220402
+Checkpoint saved to "exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3/prompt_learner/model-best.pth.tar"
+epoch [23/50][5/78]	time 0.472 (0.721)	data 0.084 (0.322)	eta 0:26:10	loss 0.0160 (0.0321)	lr 3.121725e-03
+epoch [23/50][10/78]	time 0.390 (0.598)	data 0.000 (0.204)	eta 0:21:40	loss 0.0182 (0.0321)	lr 3.121725e-03
+epoch [23/50][15/78]	time 0.554 (0.563)	data 0.166 (0.170)	eta 0:20:20	loss 0.0422 (0.0335)	lr 3.121725e-03
+epoch [23/50][20/78]	time 0.389 (0.539)	data 0.000 (0.147)	eta 0:19:25	loss 0.0436 (0.0314)	lr 3.121725e-03
+epoch [23/50][25/78]	time 0.558 (0.532)	data 0.166 (0.139)	eta 0:19:08	loss 0.0148 (0.0321)	lr 3.121725e-03
+epoch [23/50][30/78]	time 0.402 (0.518)	data 0.000 (0.125)	eta 0:18:35	loss 0.0369 (0.0332)	lr 3.121725e-03
+epoch [23/50][35/78]	time 0.510 (0.514)	data 0.121 (0.121)	eta 0:18:24	loss 0.0348 (0.0319)	lr 3.121725e-03
+epoch [23/50][40/78]	time 0.389 (0.507)	data 0.000 (0.114)	eta 0:18:07	loss 0.0283 (0.0329)	lr 3.121725e-03
+epoch [23/50][45/78]	time 0.596 (0.506)	data 0.204 (0.114)	eta 0:18:03	loss 0.0813 (0.0337)	lr 3.121725e-03
+epoch [23/50][50/78]	time 0.389 (0.503)	data 0.000 (0.111)	eta 0:17:53	loss 0.0398 (0.0334)	lr 3.121725e-03
+epoch [23/50][55/78]	time 0.561 (0.505)	data 0.172 (0.113)	eta 0:17:55	loss 0.0317 (0.0327)	lr 3.121725e-03
+epoch [23/50][60/78]	time 0.388 (0.504)	data 0.000 (0.112)	eta 0:17:49	loss 0.0714 (0.0328)	lr 3.121725e-03
+epoch [23/50][65/78]	time 0.537 (0.506)	data 0.149 (0.114)	eta 0:17:52	loss 0.0178 (0.0324)	lr 3.121725e-03
+epoch [23/50][70/78]	time 0.388 (0.503)	data 0.000 (0.111)	eta 0:17:44	loss 0.0484 (0.0331)	lr 3.121725e-03
+epoch [23/50][75/78]	time 0.531 (0.503)	data 0.142 (0.111)	eta 0:17:40	loss 0.0342 (0.0340)	lr 3.121725e-03
+Do evaluation on val set
+mAP score: 92.26155193835245
+epoch [24/50][5/78]	time 0.613 (0.744)	data 0.222 (0.355)	eta 0:26:03	loss 0.0260 (0.0351)	lr 2.968453e-03
+epoch [24/50][10/78]	time 0.391 (0.605)	data 0.000 (0.216)	eta 0:21:08	loss 0.0278 (0.0355)	lr 2.968453e-03
+epoch [24/50][15/78]	time 0.630 (0.568)	data 0.239 (0.179)	eta 0:19:48	loss 0.0136 (0.0341)	lr 2.968453e-03
+epoch [24/50][20/78]	time 0.388 (0.538)	data 0.000 (0.149)	eta 0:18:42	loss 0.0237 (0.0308)	lr 2.968453e-03
+epoch [24/50][25/78]	time 0.525 (0.525)	data 0.138 (0.137)	eta 0:18:12	loss 0.0558 (0.0298)	lr 2.968453e-03
+epoch [24/50][30/78]	time 0.387 (0.513)	data 0.000 (0.124)	eta 0:17:44	loss 0.0136 (0.0292)	lr 2.968453e-03
+epoch [24/50][35/78]	time 0.533 (0.508)	data 0.146 (0.120)	eta 0:17:32	loss 0.0576 (0.0307)	lr 2.968453e-03
+epoch [24/50][40/78]	time 0.388 (0.499)	data 0.000 (0.110)	eta 0:17:10	loss 0.0099 (0.0299)	lr 2.968453e-03
+epoch [24/50][45/78]	time 0.580 (0.498)	data 0.192 (0.109)	eta 0:17:05	loss 0.0230 (0.0290)	lr 2.968453e-03
+epoch [24/50][50/78]	time 0.387 (0.492)	data 0.000 (0.104)	eta 0:16:51	loss 0.0498 (0.0295)	lr 2.968453e-03
+epoch [24/50][55/78]	time 0.518 (0.490)	data 0.132 (0.102)	eta 0:16:45	loss 0.0316 (0.0296)	lr 2.968453e-03
+epoch [24/50][60/78]	time 0.387 (0.487)	data 0.000 (0.099)	eta 0:16:35	loss 0.0203 (0.0294)	lr 2.968453e-03
+epoch [24/50][65/78]	time 0.565 (0.486)	data 0.172 (0.097)	eta 0:16:30	loss 0.0251 (0.0291)	lr 2.968453e-03
+epoch [24/50][70/78]	time 0.387 (0.482)	data 0.000 (0.094)	eta 0:16:20	loss 0.0195 (0.0301)	lr 2.968453e-03
+epoch [24/50][75/78]	time 0.496 (0.481)	data 0.109 (0.093)	eta 0:16:16	loss 0.0857 (0.0305)	lr 2.968453e-03
+Do evaluation on val set
+mAP score: 92.63593067933667
+Checkpoint saved to "exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3/prompt_learner/model-best.pth.tar"
+epoch [25/50][5/78]	time 0.580 (0.736)	data 0.193 (0.342)	eta 0:24:48	loss 0.0179 (0.0198)	lr 2.813333e-03
+epoch [25/50][10/78]	time 0.404 (0.604)	data 0.000 (0.213)	eta 0:20:19	loss 0.0467 (0.0234)	lr 2.813333e-03
+epoch [25/50][15/78]	time 0.495 (0.560)	data 0.109 (0.166)	eta 0:18:47	loss 0.0238 (0.0277)	lr 2.813333e-03
+epoch [25/50][20/78]	time 0.387 (0.532)	data 0.000 (0.137)	eta 0:17:49	loss 0.0126 (0.0287)	lr 2.813333e-03
+epoch [25/50][25/78]	time 0.511 (0.524)	data 0.125 (0.129)	eta 0:17:29	loss 0.0172 (0.0290)	lr 2.813333e-03
+epoch [25/50][30/78]	time 0.416 (0.511)	data 0.000 (0.115)	eta 0:17:01	loss 0.0160 (0.0278)	lr 2.813333e-03
+epoch [25/50][35/78]	time 0.519 (0.507)	data 0.132 (0.111)	eta 0:16:50	loss 0.0676 (0.0300)	lr 2.813333e-03
+epoch [25/50][40/78]	time 0.387 (0.500)	data 0.000 (0.104)	eta 0:16:34	loss 0.0648 (0.0305)	lr 2.813333e-03
+epoch [25/50][45/78]	time 0.536 (0.499)	data 0.150 (0.104)	eta 0:16:30	loss 0.0349 (0.0320)	lr 2.813333e-03
+epoch [25/50][50/78]	time 0.393 (0.494)	data 0.000 (0.099)	eta 0:16:16	loss 0.0130 (0.0320)	lr 2.813333e-03
+epoch [25/50][55/78]	time 0.518 (0.491)	data 0.131 (0.097)	eta 0:16:08	loss 0.0162 (0.0316)	lr 2.813333e-03
+epoch [25/50][60/78]	time 0.386 (0.487)	data 0.000 (0.094)	eta 0:15:59	loss 0.0368 (0.0323)	lr 2.813333e-03
+epoch [25/50][65/78]	time 0.537 (0.486)	data 0.151 (0.094)	eta 0:15:54	loss 0.0311 (0.0312)	lr 2.813333e-03
+epoch [25/50][70/78]	time 0.386 (0.484)	data 0.000 (0.092)	eta 0:15:47	loss 0.0262 (0.0309)	lr 2.813333e-03
+epoch [25/50][75/78]	time 0.519 (0.483)	data 0.133 (0.091)	eta 0:15:42	loss 0.0328 (0.0306)	lr 2.813333e-03
+Do evaluation on val set
+mAP score: 92.76855638367593
+Checkpoint saved to "exp_voc/voc2007_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_pos_test_norm_rn101/Caption_tri_wta_soft/rn101/nctx21_cscTrue_ctpend/seed3/prompt_learner/model-best.pth.tar"
+epoch [26/50][5/78]	time 0.577 (0.738)	data 0.190 (0.352)	eta 0:23:56	loss 0.0102 (0.0211)	lr 2.656976e-03
+epoch [26/50][10/78]	time 0.387 (0.603)	data 0.000 (0.217)	eta 0:19:30	loss 0.0527 (0.0271)	lr 2.656976e-03
+epoch [26/50][15/78]	time 0.535 (0.568)	data 0.149 (0.182)	eta 0:18:19	loss 0.0221 (0.0240)	lr 2.656976e-03
+epoch [26/50][20/78]	time 0.387 (0.543)	data 0.000 (0.157)	eta 0:17:28	loss 0.0222 (0.0273)	lr 2.656976e-03
+epoch [26/50][25/78]	time 0.593 (0.535)	data 0.207 (0.148)	eta 0:17:09	loss 0.0260 (0.0298)	lr 2.656976e-03
+epoch [26/50][30/78]	time 0.386 (0.523)	data 0.000 (0.136)	eta 0:16:43	loss 0.0274 (0.0299)	lr 2.656976e-03
+epoch [26/50][35/78]	time 0.553 (0.520)	data 0.167 (0.133)	eta 0:16:35	loss 0.0147 (0.0281)	lr 2.656976e-03
+epoch [26/50][40/78]	time 0.386 (0.510)	data 0.000 (0.124)	eta 0:16:15	loss 0.0489 (0.0295)	lr 2.656976e-03
+epoch [26/50][45/78]	time 0.570 (0.507)	data 0.182 (0.121)	eta 0:16:06	loss 0.0228 (0.0289)	lr 2.656976e-03
+epoch [26/50][50/78]	time 0.387 (0.502)	data 0.000 (0.115)	eta 0:15:53	loss 0.0396 (0.0302)	lr 2.656976e-03
+epoch [26/50][55/78]	time 0.571 (0.501)	data 0.184 (0.114)	eta 0:15:49	loss 0.0232 (0.0305)	lr 2.656976e-03
+epoch [26/50][60/78]	time 0.387 (0.497)	data 0.000 (0.109)	eta 0:15:38	loss 0.0145 (0.0295)	lr 2.656976e-03
+epoch [26/50][65/78]	time 0.537 (0.496)	data 0.120 (0.108)	eta 0:15:34	loss 0.0086 (0.0293)	lr 2.656976e-03
+epoch [26/50][70/78]	time 0.577 (0.495)	data 0.157 (0.106)	eta 0:15:29	loss 0.0199 (0.0294)	lr 2.656976e-03
+epoch [26/50][75/78]	time 0.386 (0.492)	data 0.000 (0.104)	eta 0:15:23	loss 0.0123 (0.0297)	lr 2.656976e-03
+Do evaluation on val set
+mAP score: 92.48577072321972
+epoch [27/50][5/78]	time 0.485 (0.716)	data 0.099 (0.330)	eta 0:22:17	loss 0.0304 (0.0318)	lr 2.500000e-03
+epoch [27/50][10/78]	time 0.387 (0.582)	data 0.000 (0.196)	eta 0:18:04	loss 0.0395 (0.0339)	lr 2.500000e-03
+epoch [27/50][15/78]	time 0.601 (0.553)	data 0.214 (0.166)	eta 0:17:06	loss 0.0268 (0.0348)	lr 2.500000e-03
+epoch [27/50][20/78]	time 0.388 (0.531)	data 0.000 (0.143)	eta 0:16:22	loss 0.0308 (0.0333)	lr 2.500000e-03
+epoch [27/50][25/78]	time 0.524 (0.525)	data 0.136 (0.137)	eta 0:16:09	loss 0.0256 (0.0336)	lr 2.500000e-03
+epoch [27/50][30/78]	time 0.546 (0.522)	data 0.135 (0.133)	eta 0:16:01	loss 0.0183 (0.0344)	lr 2.500000e-03
+epoch [27/50][35/78]	time 0.386 (0.515)	data 0.000 (0.127)	eta 0:15:46	loss 0.0210 (0.0321)	lr 2.500000e-03
+epoch [27/50][40/78]	time 0.554 (0.514)	data 0.168 (0.126)	eta 0:15:41	loss 0.0710 (0.0323)	lr 2.500000e-03
+epoch [27/50][45/78]	time 0.387 (0.508)	data 0.000 (0.120)	eta 0:15:28	loss 0.0274 (0.0310)	lr 2.500000e-03
+epoch [27/50][50/78]	time 0.597 (0.507)	data 0.184 (0.118)	eta 0:15:23	loss 0.0230 (0.0306)	lr 2.500000e-03
+epoch [27/50][55/78]	time 0.386 (0.503)	data 0.000 (0.114)	eta 0:15:13	loss 0.0234 (0.0317)	lr 2.500000e-03
+epoch [27/50][60/78]	time 0.547 (0.501)	data 0.161 (0.113)	eta 0:15:08	loss 0.0204 (0.0319)	lr 2.500000e-03
+epoch [27/50][65/78]	time 0.386 (0.499)	data 0.000 (0.110)	eta 0:15:01	loss 0.0411 (0.0314)	lr 2.500000e-03
+epoch [27/50][70/78]	time 0.616 (0.499)	data 0.230 (0.111)	eta 0:14:59	loss 0.0600 (0.0310)	lr 2.500000e-03
+epoch [27/50][75/78]	time 0.386 (0.497)	data 0.000 (0.108)	eta 0:14:52	loss 0.0198 (0.0307)	lr 2.500000e-03
+Do evaluation on val set
+mAP score: 92.5563174808942
+epoch [28/50][5/78]	time 0.631 (0.749)	data 0.244 (0.362)	eta 0:22:20	loss 0.0629 (0.0361)	lr 2.343024e-03
+epoch [28/50][10/78]	time 0.387 (0.609)	data 0.000 (0.222)	eta 0:18:06	loss 0.0171 (0.0318)	lr 2.343024e-03
+epoch [28/50][15/78]	time 0.665 (0.583)	data 0.279 (0.196)	eta 0:17:17	loss 0.0169 (0.0307)	lr 2.343024e-03
+epoch [28/50][20/78]	time 0.394 (0.558)	data 0.000 (0.171)	eta 0:16:30	loss 0.0393 (0.0289)	lr 2.343024e-03
+epoch [28/50][25/78]	time 0.555 (0.549)	data 0.169 (0.161)	eta 0:16:11	loss 0.0582 (0.0283)	lr 2.343024e-03
+epoch [28/50][30/78]	time 0.386 (0.538)	data 0.000 (0.149)	eta 0:15:48	loss 0.0178 (0.0289)	lr 2.343024e-03
+epoch [28/50][35/78]	time 0.606 (0.535)	data 0.220 (0.147)	eta 0:15:41	loss 0.0314 (0.0296)	lr 2.343024e-03
+epoch [28/50][40/78]	time 0.386 (0.528)	data 0.000 (0.140)	eta 0:15:25	loss 0.0264 (0.0306)	lr 2.343024e-03
+epoch [28/50][45/78]	time 0.677 (0.529)	data 0.285 (0.141)	eta 0:15:25	loss 0.0445 (0.0306)	lr 2.343024e-03
+epoch [28/50][50/78]	time 0.386 (0.526)	data 0.000 (0.137)	eta 0:15:16	loss 0.0145 (0.0299)	lr 2.343024e-03
+epoch [28/50][55/78]	time 0.678 (0.526)	data 0.292 (0.138)	eta 0:15:15	loss 0.0301 (0.0299)	lr 2.343024e-03
+epoch [28/50][60/78]	time 0.389 (0.523)	data 0.000 (0.135)	eta 0:15:07	loss 0.0157 (0.0293)	lr 2.343024e-03
+epoch [28/50][65/78]	time 0.612 (0.522)	data 0.225 (0.134)	eta 0:15:02	loss 0.0199 (0.0290)	lr 2.343024e-03
+epoch [28/50][70/78]	time 0.386 (0.519)	data 0.000 (0.131)	eta 0:14:54	loss 0.0167 (0.0287)	lr 2.343024e-03
+epoch [28/50][75/78]	time 0.583 (0.518)	data 0.197 (0.130)	eta 0:14:50	loss 0.0192 (0.0287)	lr 2.343024e-03
+Do evaluation on val set
+mAP score: 92.65844007560396
+epoch [29/50][5/78]	time 0.559 (0.734)	data 0.169 (0.338)	eta 0:20:55	loss 0.0274 (0.0346)	lr 2.186667e-03
+epoch [29/50][10/78]	time 0.387 (0.596)	data 0.000 (0.203)	eta 0:16:56	loss 0.0137 (0.0313)	lr 2.186667e-03
+epoch [29/50][15/78]	time 0.578 (0.568)	data 0.188 (0.177)	eta 0:16:06	loss 0.0080 (0.0291)	lr 2.186667e-03
+epoch [29/50][20/78]	time 0.387 (0.540)	data 0.000 (0.150)	eta 0:15:15	loss 0.0272 (0.0311)	lr 2.186667e-03
+epoch [29/50][25/78]	time 0.599 (0.532)	data 0.211 (0.142)	eta 0:14:58	loss 0.0341 (0.0324)	lr 2.186667e-03
+epoch [29/50][30/78]	time 0.390 (0.520)	data 0.000 (0.131)	eta 0:14:37	loss 0.0179 (0.0324)	lr 2.186667e-03
+epoch [29/50][35/78]	time 0.533 (0.516)	data 0.125 (0.125)	eta 0:14:26	loss 0.0481 (0.0327)	lr 2.186667e-03
+epoch [29/50][40/78]	time 0.390 (0.508)	data 0.000 (0.117)	eta 0:14:11	loss 0.0566 (0.0321)	lr 2.186667e-03
+epoch [29/50][45/78]	time 0.553 (0.505)	data 0.162 (0.115)	eta 0:14:04	loss 0.0378 (0.0316)	lr 2.186667e-03
+epoch [29/50][50/78]	time 0.391 (0.501)	data 0.000 (0.110)	eta 0:13:54	loss 0.0088 (0.0303)	lr 2.186667e-03
+epoch [29/50][55/78]	time 0.567 (0.501)	data 0.177 (0.111)	eta 0:13:52	loss 0.0492 (0.0306)	lr 2.186667e-03
+epoch [29/50][60/78]	time 0.394 (0.498)	data 0.000 (0.107)	eta 0:13:44	loss 0.0435 (0.0313)	lr 2.186667e-03
+epoch [29/50][65/78]	time 0.518 (0.497)	data 0.094 (0.105)	eta 0:13:39	loss 0.0519 (0.0319)	lr 2.186667e-03
+epoch [29/50][70/78]	time 0.390 (0.493)	data 0.000 (0.100)	eta 0:13:31	loss 0.0744 (0.0330)	lr 2.186667e-03
+epoch [29/50][75/78]	time 0.455 (0.492)	data 0.064 (0.100)	eta 0:13:27	loss 0.0504 (0.0332)	lr 2.186667e-03
+Do evaluation on val set
+mAP score: 92.49015153548265
+epoch [30/50][5/78]	time 0.524 (0.718)	data 0.138 (0.331)	eta 0:19:32	loss 0.0157 (0.0381)	lr 2.031547e-03
+epoch [30/50][10/78]	time 0.387 (0.588)	data 0.000 (0.202)	eta 0:15:57	loss 0.0276 (0.0420)	lr 2.031547e-03
+epoch [30/50][15/78]	time 0.574 (0.558)	data 0.188 (0.171)	eta 0:15:05	loss 0.0386 (0.0365)	lr 2.031547e-03
+epoch [30/50][20/78]	time 0.387 (0.535)	data 0.000 (0.148)	eta 0:14:25	loss 0.0322 (0.0334)	lr 2.031547e-03
+epoch [30/50][25/78]	time 0.562 (0.527)	data 0.175 (0.140)	eta 0:14:09	loss 0.0512 (0.0322)	lr 2.031547e-03
+epoch [30/50][30/78]	time 0.420 (0.517)	data 0.000 (0.129)	eta 0:13:50	loss 0.0363 (0.0327)	lr 2.031547e-03
+epoch [30/50][35/78]	time 0.582 (0.512)	data 0.196 (0.125)	eta 0:13:41	loss 0.0328 (0.0312)	lr 2.031547e-03
+epoch [30/50][40/78]	time 0.387 (0.505)	data 0.000 (0.118)	eta 0:13:27	loss 0.0117 (0.0297)	lr 2.031547e-03
+epoch [30/50][45/78]	time 0.587 (0.505)	data 0.200 (0.118)	eta 0:13:24	loss 0.0300 (0.0294)	lr 2.031547e-03
+epoch [30/50][50/78]	time 0.421 (0.500)	data 0.000 (0.112)	eta 0:13:13	loss 0.0158 (0.0284)	lr 2.031547e-03
+epoch [30/50][55/78]	time 0.528 (0.499)	data 0.142 (0.111)	eta 0:13:09	loss 0.0370 (0.0289)	lr 2.031547e-03
+epoch [30/50][60/78]	time 0.387 (0.496)	data 0.000 (0.108)	eta 0:13:02	loss 0.0204 (0.0282)	lr 2.031547e-03
+epoch [30/50][65/78]	time 0.566 (0.496)	data 0.180 (0.108)	eta 0:12:59	loss 0.0396 (0.0296)	lr 2.031547e-03
+epoch [30/50][70/78]	time 0.386 (0.492)	data 0.000 (0.105)	eta 0:12:52	loss 0.0195 (0.0296)	lr 2.031547e-03
+epoch [30/50][75/78]	time 0.539 (0.492)	data 0.153 (0.104)	eta 0:12:48	loss 0.0382 (0.0302)	lr 2.031547e-03
+Do evaluation on val set
+mAP score: 92.38047707503718
+epoch [31/50][5/78]	time 0.590 (0.723)	data 0.201 (0.330)	eta 0:18:43	loss 0.0311 (0.0386)	lr 1.878275e-03
+epoch [31/50][10/78]	time 0.386 (0.598)	data 0.000 (0.208)	eta 0:15:26	loss 0.0205 (0.0313)	lr 1.878275e-03
+epoch [31/50][15/78]	time 0.614 (0.564)	data 0.228 (0.173)	eta 0:14:31	loss 0.0185 (0.0289)	lr 1.878275e-03
+epoch [31/50][20/78]	time 0.388 (0.534)	data 0.000 (0.143)	eta 0:13:42	loss 0.0416 (0.0269)	lr 1.878275e-03
+epoch [31/50][25/78]	time 0.475 (0.522)	data 0.088 (0.130)	eta 0:13:21	loss 0.0320 (0.0278)	lr 1.878275e-03
+epoch [31/50][30/78]	time 0.386 (0.507)	data 0.000 (0.116)	eta 0:12:55	loss 0.0133 (0.0285)	lr 1.878275e-03
+epoch [31/50][35/78]	time 0.484 (0.505)	data 0.097 (0.114)	eta 0:12:49	loss 0.0599 (0.0296)	lr 1.878275e-03
+epoch [31/50][40/78]	time 0.418 (0.497)	data 0.000 (0.105)	eta 0:12:36	loss 0.0152 (0.0285)	lr 1.878275e-03
+epoch [31/50][45/78]	time 0.451 (0.493)	data 0.065 (0.100)	eta 0:12:27	loss 0.0269 (0.0285)	lr 1.878275e-03
+epoch [31/50][50/78]	time 0.386 (0.489)	data 0.000 (0.095)	eta 0:12:17	loss 0.0158 (0.0284)	lr 1.878275e-03
+epoch [31/50][55/78]	time 0.528 (0.487)	data 0.142 (0.094)	eta 0:12:12	loss 0.0287 (0.0299)	lr 1.878275e-03
+epoch [31/50][60/78]	time 0.418 (0.482)	data 0.000 (0.089)	eta 0:12:03	loss 0.0358 (0.0309)	lr 1.878275e-03
+epoch [31/50][65/78]	time 0.565 (0.481)	data 0.179 (0.088)	eta 0:11:59	loss 0.0199 (0.0306)	lr 1.878275e-03
+epoch [31/50][70/78]	time 0.418 (0.478)	data 0.000 (0.084)	eta 0:11:52	loss 0.0172 (0.0302)	lr 1.878275e-03
+epoch [31/50][75/78]	time 0.451 (0.477)	data 0.064 (0.083)	eta 0:11:48	loss 0.0159 (0.0301)	lr 1.878275e-03
+Do evaluation on val set
+mAP score: 92.41638893709346
+epoch [32/50][5/78]	time 0.589 (0.735)	data 0.202 (0.348)	eta 0:18:05	loss 0.0126 (0.0222)	lr 1.727458e-03
+epoch [32/50][10/78]	time 0.420 (0.607)	data 0.000 (0.217)	eta 0:14:53	loss 0.0489 (0.0244)	lr 1.727458e-03
+epoch [32/50][15/78]	time 0.659 (0.578)	data 0.272 (0.187)	eta 0:14:07	loss 0.0265 (0.0270)	lr 1.727458e-03
+epoch [32/50][20/78]	time 0.391 (0.551)	data 0.000 (0.161)	eta 0:13:26	loss 0.0051 (0.0242)	lr 1.727458e-03
+epoch [32/50][25/78]	time 0.596 (0.544)	data 0.205 (0.153)	eta 0:13:11	loss 0.0207 (0.0234)	lr 1.727458e-03
+epoch [32/50][30/78]	time 0.404 (0.534)	data 0.000 (0.142)	eta 0:12:54	loss 0.0253 (0.0245)	lr 1.727458e-03
+epoch [32/50][35/78]	time 0.638 (0.530)	data 0.223 (0.138)	eta 0:12:46	loss 0.0234 (0.0255)	lr 1.727458e-03
+epoch [32/50][40/78]	time 0.390 (0.521)	data 0.000 (0.128)	eta 0:12:31	loss 0.0375 (0.0253)	lr 1.727458e-03
+epoch [32/50][45/78]	time 0.550 (0.517)	data 0.160 (0.124)	eta 0:12:23	loss 0.0811 (0.0264)	lr 1.727458e-03
+epoch [32/50][50/78]	time 0.390 (0.514)	data 0.000 (0.120)	eta 0:12:15	loss 0.0496 (0.0261)	lr 1.727458e-03
+epoch [32/50][55/78]	time 0.581 (0.512)	data 0.190 (0.119)	eta 0:12:10	loss 0.0439 (0.0263)	lr 1.727458e-03
+epoch [32/50][60/78]	time 0.390 (0.509)	data 0.000 (0.116)	eta 0:12:04	loss 0.0270 (0.0263)	lr 1.727458e-03
+epoch [32/50][65/78]	time 0.549 (0.507)	data 0.159 (0.114)	eta 0:11:58	loss 0.0242 (0.0260)	lr 1.727458e-03
+epoch [32/50][70/78]	time 0.390 (0.504)	data 0.000 (0.111)	eta 0:11:51	loss 0.0244 (0.0263)	lr 1.727458e-03
+epoch [32/50][75/78]	time 0.565 (0.504)	data 0.176 (0.110)	eta 0:11:48	loss 0.0608 (0.0265)	lr 1.727458e-03
+Do evaluation on val set
+mAP score: 92.49547285310572
+epoch [33/50][5/78]	time 0.479 (0.732)	data 0.093 (0.338)	eta 0:17:04	loss 0.0292 (0.0281)	lr 1.579689e-03
+epoch [33/50][10/78]	time 0.393 (0.616)	data 0.000 (0.224)	eta 0:14:18	loss 0.0140 (0.0256)	lr 1.579689e-03
+epoch [33/50][15/78]	time 0.644 (0.595)	data 0.229 (0.202)	eta 0:13:46	loss 0.0250 (0.0233)	lr 1.579689e-03
+epoch [33/50][20/78]	time 0.407 (0.571)	data 0.000 (0.177)	eta 0:13:10	loss 0.0279 (0.0254)	lr 1.579689e-03
+epoch [33/50][25/78]	time 0.645 (0.564)	data 0.231 (0.169)	eta 0:12:58	loss 0.0120 (0.0270)	lr 1.579689e-03
+epoch [33/50][30/78]	time 0.392 (0.552)	data 0.000 (0.156)	eta 0:12:38	loss 0.0167 (0.0261)	lr 1.579689e-03
+epoch [33/50][35/78]	time 0.656 (0.548)	data 0.265 (0.153)	eta 0:12:30	loss 0.0320 (0.0265)	lr 1.579689e-03
+epoch [33/50][40/78]	time 0.390 (0.542)	data 0.000 (0.146)	eta 0:12:19	loss 0.0287 (0.0263)	lr 1.579689e-03
+epoch [33/50][45/78]	time 0.608 (0.539)	data 0.222 (0.144)	eta 0:12:12	loss 0.0187 (0.0262)	lr 1.579689e-03
+epoch [33/50][50/78]	time 0.386 (0.533)	data 0.000 (0.138)	eta 0:12:02	loss 0.0631 (0.0267)	lr 1.579689e-03
+epoch [33/50][55/78]	time 0.662 (0.533)	data 0.251 (0.139)	eta 0:11:59	loss 0.0237 (0.0273)	lr 1.579689e-03
+epoch [33/50][60/78]	time 0.386 (0.529)	data 0.000 (0.135)	eta 0:11:51	loss 0.0186 (0.0270)	lr 1.579689e-03
+epoch [33/50][65/78]	time 0.575 (0.530)	data 0.188 (0.136)	eta 0:11:49	loss 0.0528 (0.0274)	lr 1.579689e-03
+epoch [33/50][70/78]	time 0.406 (0.530)	data 0.000 (0.136)	eta 0:11:46	loss 0.0204 (0.0269)	lr 1.579689e-03
+epoch [33/50][75/78]	time 0.598 (0.530)	data 0.212 (0.136)	eta 0:11:44	loss 0.0192 (0.0270)	lr 1.579689e-03
+Do evaluation on val set
+mAP score: 92.51933774651174
+epoch [34/50][5/78]	time 0.556 (0.732)	data 0.170 (0.346)	eta 0:16:07	loss 0.0539 (0.0357)	lr 1.435552e-03
+epoch [34/50][10/78]	time 0.424 (0.602)	data 0.000 (0.211)	eta 0:13:11	loss 0.0135 (0.0274)	lr 1.435552e-03
+epoch [34/50][15/78]	time 0.603 (0.561)	data 0.217 (0.170)	eta 0:12:15	loss 0.0076 (0.0253)	lr 1.435552e-03
+epoch [34/50][20/78]	time 0.386 (0.536)	data 0.000 (0.144)	eta 0:11:39	loss 0.0076 (0.0232)	lr 1.435552e-03
+epoch [34/50][25/78]	time 0.565 (0.529)	data 0.179 (0.138)	eta 0:11:27	loss 0.0265 (0.0232)	lr 1.435552e-03
+epoch [34/50][30/78]	time 0.386 (0.517)	data 0.000 (0.127)	eta 0:11:10	loss 0.0360 (0.0236)	lr 1.435552e-03
+epoch [34/50][35/78]	time 0.616 (0.512)	data 0.229 (0.122)	eta 0:11:01	loss 0.0268 (0.0229)	lr 1.435552e-03
+epoch [34/50][40/78]	time 0.387 (0.504)	data 0.000 (0.115)	eta 0:10:48	loss 0.0479 (0.0230)	lr 1.435552e-03
+epoch [34/50][45/78]	time 0.515 (0.499)	data 0.128 (0.110)	eta 0:10:39	loss 0.0120 (0.0224)	lr 1.435552e-03
+epoch [34/50][50/78]	time 0.387 (0.494)	data 0.000 (0.105)	eta 0:10:29	loss 0.0296 (0.0232)	lr 1.435552e-03
+epoch [34/50][55/78]	time 0.496 (0.493)	data 0.110 (0.104)	eta 0:10:25	loss 0.0354 (0.0245)	lr 1.435552e-03
+epoch [34/50][60/78]	time 0.387 (0.488)	data 0.000 (0.100)	eta 0:10:18	loss 0.0292 (0.0248)	lr 1.435552e-03
+epoch [34/50][65/78]	time 0.557 (0.487)	data 0.171 (0.099)	eta 0:10:14	loss 0.0544 (0.0257)	lr 1.435552e-03
+epoch [34/50][70/78]	time 0.386 (0.484)	data 0.000 (0.096)	eta 0:10:07	loss 0.0088 (0.0255)	lr 1.435552e-03
+epoch [34/50][75/78]	time 0.513 (0.484)	data 0.127 (0.096)	eta 0:10:04	loss 0.0472 (0.0260)	lr 1.435552e-03
+Do evaluation on val set
+mAP score: 92.55414527279827
+epoch [35/50][5/78]	time 0.608 (0.747)	data 0.222 (0.361)	eta 0:15:28	loss 0.0067 (0.0146)	lr 1.295616e-03
+epoch [35/50][10/78]	time 0.386 (0.628)	data 0.000 (0.238)	eta 0:12:57	loss 0.0364 (0.0193)	lr 1.295616e-03
+epoch [35/50][15/78]	time 0.600 (0.599)	data 0.213 (0.209)	eta 0:12:18	loss 0.0226 (0.0236)	lr 1.295616e-03
+epoch [35/50][20/78]	time 0.402 (0.573)	data 0.000 (0.182)	eta 0:11:43	loss 0.0151 (0.0226)	lr 1.295616e-03
+epoch [35/50][25/78]	time 0.582 (0.563)	data 0.196 (0.171)	eta 0:11:28	loss 0.0172 (0.0232)	lr 1.295616e-03
+epoch [35/50][30/78]	time 0.387 (0.548)	data 0.000 (0.157)	eta 0:11:07	loss 0.0126 (0.0240)	lr 1.295616e-03
+epoch [35/50][35/78]	time 0.684 (0.550)	data 0.298 (0.159)	eta 0:11:07	loss 0.0144 (0.0253)	lr 1.295616e-03
+epoch [35/50][40/78]	time 0.386 (0.542)	data 0.000 (0.151)	eta 0:10:54	loss 0.0214 (0.0261)	lr 1.295616e-03
+epoch [35/50][45/78]	time 0.584 (0.542)	data 0.198 (0.150)	eta 0:10:51	loss 0.0273 (0.0254)	lr 1.295616e-03
+epoch [35/50][50/78]	time 0.386 (0.538)	data 0.000 (0.146)	eta 0:10:44	loss 0.0101 (0.0253)	lr 1.295616e-03
+epoch [35/50][55/78]	time 0.557 (0.537)	data 0.171 (0.146)	eta 0:10:40	loss 0.0053 (0.0245)	lr 1.295616e-03
+epoch [35/50][60/78]	time 0.390 (0.533)	data 0.000 (0.142)	eta 0:10:32	loss 0.0120 (0.0244)	lr 1.295616e-03
+epoch [35/50][65/78]	time 0.607 (0.533)	data 0.221 (0.142)	eta 0:10:30	loss 0.0215 (0.0245)	lr 1.295616e-03
+epoch [35/50][70/78]	time 0.386 (0.531)	data 0.000 (0.141)	eta 0:10:25	loss 0.0573 (0.0255)	lr 1.295616e-03
+epoch [35/50][75/78]	time 0.628 (0.532)	data 0.236 (0.141)	eta 0:10:24	loss 0.0115 (0.0257)	lr 1.295616e-03
+Do evaluation on val set
+mAP score: 92.47047095606463
+epoch [36/50][5/78]	time 0.590 (0.735)	data 0.203 (0.333)	eta 0:14:15	loss 0.0198 (0.0276)	lr 1.160433e-03
+epoch [36/50][10/78]	time 0.386 (0.604)	data 0.000 (0.210)	eta 0:11:40	loss 0.0114 (0.0216)	lr 1.160433e-03
+epoch [36/50][15/78]	time 0.613 (0.578)	data 0.220 (0.185)	eta 0:11:07	loss 0.0041 (0.0213)	lr 1.160433e-03
+epoch [36/50][20/78]	time 0.386 (0.553)	data 0.000 (0.160)	eta 0:10:36	loss 0.0390 (0.0231)	lr 1.160433e-03
+epoch [36/50][25/78]	time 0.609 (0.547)	data 0.220 (0.155)	eta 0:10:25	loss 0.0334 (0.0270)	lr 1.160433e-03
+epoch [36/50][30/78]	time 0.387 (0.536)	data 0.000 (0.144)	eta 0:10:11	loss 0.0568 (0.0273)	lr 1.160433e-03
+epoch [36/50][35/78]	time 0.657 (0.537)	data 0.249 (0.144)	eta 0:10:10	loss 0.0170 (0.0288)	lr 1.160433e-03
+epoch [36/50][40/78]	time 0.386 (0.530)	data 0.000 (0.137)	eta 0:09:58	loss 0.0440 (0.0281)	lr 1.160433e-03
+epoch [36/50][45/78]	time 0.653 (0.531)	data 0.241 (0.137)	eta 0:09:56	loss 0.0448 (0.0284)	lr 1.160433e-03
+epoch [36/50][50/78]	time 0.386 (0.526)	data 0.000 (0.133)	eta 0:09:48	loss 0.0143 (0.0287)	lr 1.160433e-03
+epoch [36/50][55/78]	time 0.644 (0.529)	data 0.233 (0.135)	eta 0:09:49	loss 0.0139 (0.0281)	lr 1.160433e-03
+epoch [36/50][60/78]	time 0.387 (0.524)	data 0.000 (0.131)	eta 0:09:41	loss 0.0100 (0.0285)	lr 1.160433e-03
+epoch [36/50][65/78]	time 0.589 (0.523)	data 0.202 (0.131)	eta 0:09:38	loss 0.0185 (0.0286)	lr 1.160433e-03
+epoch [36/50][70/78]	time 0.386 (0.520)	data 0.000 (0.128)	eta 0:09:32	loss 0.0314 (0.0287)	lr 1.160433e-03
+epoch [36/50][75/78]	time 0.592 (0.520)	data 0.206 (0.128)	eta 0:09:29	loss 0.0093 (0.0280)	lr 1.160433e-03
+Do evaluation on val set
+mAP score: 92.39668356603687
+epoch [37/50][5/78]	time 0.904 (0.872)	data 0.518 (0.486)	eta 0:15:47	loss 0.0311 (0.0256)	lr 1.030537e-03
+epoch [37/50][10/78]	time 0.386 (0.657)	data 0.000 (0.270)	eta 0:11:50	loss 0.0726 (0.0289)	lr 1.030537e-03
+epoch [37/50][15/78]	time 0.387 (0.598)	data 0.000 (0.210)	eta 0:10:44	loss 0.0149 (0.0300)	lr 1.030537e-03
+epoch [37/50][20/78]	time 0.682 (0.580)	data 0.296 (0.192)	eta 0:10:21	loss 0.0098 (0.0284)	lr 1.030537e-03
+epoch [37/50][25/78]	time 0.387 (0.564)	data 0.000 (0.177)	eta 0:10:02	loss 0.0091 (0.0274)	lr 1.030537e-03
+epoch [37/50][30/78]	time 0.692 (0.562)	data 0.305 (0.174)	eta 0:09:56	loss 0.0571 (0.0296)	lr 1.030537e-03
+epoch [37/50][35/78]	time 0.387 (0.549)	data 0.000 (0.161)	eta 0:09:40	loss 0.0360 (0.0285)	lr 1.030537e-03
+epoch [37/50][40/78]	time 0.555 (0.542)	data 0.169 (0.154)	eta 0:09:30	loss 0.0176 (0.0281)	lr 1.030537e-03
+epoch [37/50][45/78]	time 0.386 (0.537)	data 0.000 (0.148)	eta 0:09:22	loss 0.0334 (0.0277)	lr 1.030537e-03
+epoch [37/50][50/78]	time 0.625 (0.534)	data 0.207 (0.144)	eta 0:09:16	loss 0.0135 (0.0260)	lr 1.030537e-03
+epoch [37/50][55/78]	time 0.417 (0.528)	data 0.000 (0.138)	eta 0:09:07	loss 0.0235 (0.0256)	lr 1.030537e-03
+epoch [37/50][60/78]	time 0.592 (0.525)	data 0.206 (0.135)	eta 0:09:01	loss 0.0422 (0.0259)	lr 1.030537e-03
+epoch [37/50][65/78]	time 0.386 (0.523)	data 0.000 (0.132)	eta 0:08:56	loss 0.0368 (0.0266)	lr 1.030537e-03
+epoch [37/50][70/78]	time 0.537 (0.520)	data 0.150 (0.130)	eta 0:08:51	loss 0.0363 (0.0281)	lr 1.030537e-03
+epoch [37/50][75/78]	time 0.386 (0.517)	data 0.000 (0.126)	eta 0:08:45	loss 0.0152 (0.0290)	lr 1.030537e-03
+Do evaluation on val set
+mAP score: 92.33999217708599
+epoch [38/50][5/78]	time 0.565 (0.715)	data 0.179 (0.328)	eta 0:12:01	loss 0.0171 (0.0271)	lr 9.064400e-04
+epoch [38/50][10/78]	time 0.386 (0.596)	data 0.000 (0.210)	eta 0:09:58	loss 0.0332 (0.0282)	lr 9.064400e-04
+epoch [38/50][15/78]	time 0.547 (0.578)	data 0.161 (0.192)	eta 0:09:37	loss 0.0264 (0.0257)	lr 9.064400e-04
+epoch [38/50][20/78]	time 0.388 (0.553)	data 0.000 (0.166)	eta 0:09:10	loss 0.0475 (0.0256)	lr 9.064400e-04
+epoch [38/50][25/78]	time 0.592 (0.544)	data 0.203 (0.157)	eta 0:08:58	loss 0.0453 (0.0271)	lr 9.064400e-04
+epoch [38/50][30/78]	time 0.387 (0.531)	data 0.000 (0.144)	eta 0:08:42	loss 0.0101 (0.0264)	lr 9.064400e-04
+epoch [38/50][35/78]	time 0.582 (0.528)	data 0.193 (0.140)	eta 0:08:36	loss 0.0256 (0.0275)	lr 9.064400e-04
+epoch [38/50][40/78]	time 0.386 (0.520)	data 0.000 (0.133)	eta 0:08:26	loss 0.0287 (0.0284)	lr 9.064400e-04
+epoch [38/50][45/78]	time 0.524 (0.519)	data 0.134 (0.131)	eta 0:08:22	loss 0.0250 (0.0273)	lr 9.064400e-04
+epoch [38/50][50/78]	time 0.387 (0.513)	data 0.000 (0.126)	eta 0:08:14	loss 0.0281 (0.0268)	lr 9.064400e-04
+epoch [38/50][55/78]	time 0.554 (0.512)	data 0.168 (0.124)	eta 0:08:10	loss 0.0495 (0.0268)	lr 9.064400e-04
+epoch [38/50][60/78]	time 0.386 (0.508)	data 0.000 (0.120)	eta 0:08:04	loss 0.0086 (0.0255)	lr 9.064400e-04
+epoch [38/50][65/78]	time 0.556 (0.507)	data 0.170 (0.119)	eta 0:08:00	loss 0.0178 (0.0256)	lr 9.064400e-04
+epoch [38/50][70/78]	time 0.386 (0.503)	data 0.000 (0.116)	eta 0:07:55	loss 0.0099 (0.0256)	lr 9.064400e-04
+epoch [38/50][75/78]	time 0.616 (0.504)	data 0.229 (0.116)	eta 0:07:53	loss 0.0123 (0.0254)	lr 9.064400e-04
+Do evaluation on val set
+mAP score: 92.43891498520453
+epoch [39/50][5/78]	time 0.590 (0.731)	data 0.205 (0.331)	eta 0:11:20	loss 0.0135 (0.0152)	lr 7.886322e-04
+epoch [39/50][10/78]	time 0.390 (0.592)	data 0.000 (0.198)	eta 0:09:08	loss 0.0248 (0.0221)	lr 7.886322e-04
+epoch [39/50][15/78]	time 0.536 (0.553)	data 0.151 (0.160)	eta 0:08:29	loss 0.0071 (0.0252)	lr 7.886322e-04
+epoch [39/50][20/78]	time 0.386 (0.537)	data 0.000 (0.146)	eta 0:08:11	loss 0.0160 (0.0243)	lr 7.886322e-04
+epoch [39/50][25/78]	time 0.490 (0.527)	data 0.100 (0.135)	eta 0:08:00	loss 0.0484 (0.0250)	lr 7.886322e-04
+epoch [39/50][30/78]	time 0.389 (0.514)	data 0.000 (0.122)	eta 0:07:45	loss 0.0253 (0.0239)	lr 7.886322e-04
+epoch [39/50][35/78]	time 0.548 (0.510)	data 0.158 (0.119)	eta 0:07:39	loss 0.0335 (0.0237)	lr 7.886322e-04
+epoch [39/50][40/78]	time 0.390 (0.502)	data 0.000 (0.111)	eta 0:07:30	loss 0.0439 (0.0244)	lr 7.886322e-04
+epoch [39/50][45/78]	time 0.520 (0.501)	data 0.130 (0.110)	eta 0:07:26	loss 0.0386 (0.0258)	lr 7.886322e-04
+epoch [39/50][50/78]	time 0.386 (0.495)	data 0.000 (0.104)	eta 0:07:18	loss 0.0312 (0.0265)	lr 7.886322e-04
+epoch [39/50][55/78]	time 0.551 (0.493)	data 0.165 (0.103)	eta 0:07:14	loss 0.0403 (0.0269)	lr 7.886322e-04
+epoch [39/50][60/78]	time 0.386 (0.491)	data 0.000 (0.101)	eta 0:07:09	loss 0.0481 (0.0275)	lr 7.886322e-04
+epoch [39/50][65/78]	time 0.537 (0.489)	data 0.150 (0.100)	eta 0:07:06	loss 0.0182 (0.0274)	lr 7.886322e-04
+epoch [39/50][70/78]	time 0.390 (0.486)	data 0.000 (0.096)	eta 0:07:00	loss 0.0105 (0.0276)	lr 7.886322e-04
+epoch [39/50][75/78]	time 0.492 (0.484)	data 0.105 (0.094)	eta 0:06:56	loss 0.0266 (0.0275)	lr 7.886322e-04
+Do evaluation on val set
+mAP score: 92.4553304165689
+epoch [40/50][5/78]	time 0.605 (0.720)	data 0.217 (0.333)	eta 0:10:14	loss 0.0126 (0.0229)	lr 6.775784e-04
+epoch [40/50][10/78]	time 0.457 (0.601)	data 0.070 (0.212)	eta 0:08:29	loss 0.0360 (0.0206)	lr 6.775784e-04
+epoch [40/50][15/78]	time 0.387 (0.574)	data 0.000 (0.185)	eta 0:08:03	loss 0.0179 (0.0221)	lr 6.775784e-04
+epoch [40/50][20/78]	time 0.735 (0.569)	data 0.349 (0.182)	eta 0:07:57	loss 0.0181 (0.0210)	lr 6.775784e-04
+epoch [40/50][25/78]	time 0.389 (0.555)	data 0.000 (0.166)	eta 0:07:42	loss 0.0100 (0.0235)	lr 6.775784e-04
+epoch [40/50][30/78]	time 0.714 (0.557)	data 0.297 (0.167)	eta 0:07:41	loss 0.0212 (0.0248)	lr 6.775784e-04
+epoch [40/50][35/78]	time 0.386 (0.546)	data 0.000 (0.157)	eta 0:07:29	loss 0.0100 (0.0257)	lr 6.775784e-04
+epoch [40/50][40/78]	time 0.713 (0.553)	data 0.298 (0.162)	eta 0:07:31	loss 0.0086 (0.0245)	lr 6.775784e-04
+epoch [40/50][45/78]	time 0.386 (0.547)	data 0.000 (0.156)	eta 0:07:24	loss 0.0108 (0.0245)	lr 6.775784e-04
+epoch [40/50][50/78]	time 0.586 (0.546)	data 0.200 (0.156)	eta 0:07:21	loss 0.0286 (0.0256)	lr 6.775784e-04
+epoch [40/50][55/78]	time 0.386 (0.543)	data 0.000 (0.153)	eta 0:07:15	loss 0.0420 (0.0267)	lr 6.775784e-04
+epoch [40/50][60/78]	time 0.573 (0.543)	data 0.186 (0.152)	eta 0:07:13	loss 0.0369 (0.0275)	lr 6.775784e-04
+epoch [40/50][65/78]	time 0.386 (0.542)	data 0.000 (0.152)	eta 0:07:09	loss 0.0213 (0.0279)	lr 6.775784e-04
+epoch [40/50][70/78]	time 0.657 (0.544)	data 0.271 (0.153)	eta 0:07:08	loss 0.0346 (0.0282)	lr 6.775784e-04
+epoch [40/50][75/78]	time 0.385 (0.540)	data 0.000 (0.150)	eta 0:07:02	loss 0.0194 (0.0280)	lr 6.775784e-04
+Do evaluation on val set
+mAP score: 92.3988098007844
+epoch [41/50][5/78]	time 0.485 (0.694)	data 0.099 (0.300)	eta 0:08:57	loss 0.0165 (0.0240)	lr 5.737169e-04
+epoch [41/50][10/78]	time 0.482 (0.578)	data 0.096 (0.188)	eta 0:07:25	loss 0.0675 (0.0273)	lr 5.737169e-04
+epoch [41/50][15/78]	time 0.387 (0.549)	data 0.000 (0.155)	eta 0:06:59	loss 0.0220 (0.0313)	lr 5.737169e-04
+epoch [41/50][20/78]	time 0.700 (0.553)	data 0.314 (0.161)	eta 0:07:00	loss 0.0249 (0.0277)	lr 5.737169e-04
+epoch [41/50][25/78]	time 0.387 (0.541)	data 0.000 (0.149)	eta 0:06:48	loss 0.0455 (0.0287)	lr 5.737169e-04
+epoch [41/50][30/78]	time 0.557 (0.538)	data 0.168 (0.147)	eta 0:06:43	loss 0.0308 (0.0273)	lr 5.737169e-04
+epoch [41/50][35/78]	time 0.386 (0.528)	data 0.000 (0.137)	eta 0:06:33	loss 0.0403 (0.0293)	lr 5.737169e-04
+epoch [41/50][40/78]	time 0.620 (0.525)	data 0.210 (0.134)	eta 0:06:28	loss 0.0205 (0.0287)	lr 5.737169e-04
+epoch [41/50][45/78]	time 0.386 (0.520)	data 0.000 (0.129)	eta 0:06:22	loss 0.0194 (0.0277)	lr 5.737169e-04
+epoch [41/50][50/78]	time 0.562 (0.519)	data 0.176 (0.128)	eta 0:06:18	loss 0.0472 (0.0289)	lr 5.737169e-04
+epoch [41/50][55/78]	time 0.386 (0.515)	data 0.000 (0.124)	eta 0:06:13	loss 0.0121 (0.0285)	lr 5.737169e-04
+epoch [41/50][60/78]	time 0.635 (0.517)	data 0.225 (0.125)	eta 0:06:12	loss 0.0078 (0.0286)	lr 5.737169e-04
+epoch [41/50][65/78]	time 0.386 (0.514)	data 0.000 (0.122)	eta 0:06:07	loss 0.0122 (0.0282)	lr 5.737169e-04
+epoch [41/50][70/78]	time 0.608 (0.522)	data 0.197 (0.130)	eta 0:06:10	loss 0.0090 (0.0281)	lr 5.737169e-04
+epoch [41/50][75/78]	time 0.385 (0.518)	data 0.000 (0.126)	eta 0:06:04	loss 0.0107 (0.0279)	lr 5.737169e-04
+Do evaluation on val set
+mAP score: 92.39424739009617
+epoch [42/50][5/78]	time 0.475 (0.685)	data 0.089 (0.298)	eta 0:07:57	loss 0.0473 (0.0319)	lr 4.774575e-04
+epoch [42/50][10/78]	time 0.461 (0.565)	data 0.075 (0.176)	eta 0:06:30	loss 0.0391 (0.0267)	lr 4.774575e-04
+epoch [42/50][15/78]	time 0.386 (0.534)	data 0.000 (0.146)	eta 0:06:07	loss 0.0313 (0.0254)	lr 4.774575e-04
+epoch [42/50][20/78]	time 0.582 (0.529)	data 0.196 (0.142)	eta 0:06:01	loss 0.0199 (0.0230)	lr 4.774575e-04
+epoch [42/50][25/78]	time 0.412 (0.518)	data 0.000 (0.130)	eta 0:05:51	loss 0.0254 (0.0231)	lr 4.774575e-04
+epoch [42/50][30/78]	time 0.637 (0.519)	data 0.251 (0.131)	eta 0:05:48	loss 0.0239 (0.0235)	lr 4.774575e-04
+epoch [42/50][35/78]	time 0.386 (0.512)	data 0.000 (0.124)	eta 0:05:41	loss 0.0273 (0.0240)	lr 4.774575e-04
+epoch [42/50][40/78]	time 0.544 (0.513)	data 0.158 (0.125)	eta 0:05:39	loss 0.0160 (0.0241)	lr 4.774575e-04
+epoch [42/50][45/78]	time 0.386 (0.512)	data 0.000 (0.122)	eta 0:05:36	loss 0.0232 (0.0231)	lr 4.774575e-04
+epoch [42/50][50/78]	time 0.558 (0.511)	data 0.172 (0.121)	eta 0:05:33	loss 0.0386 (0.0245)	lr 4.774575e-04
+epoch [42/50][55/78]	time 0.386 (0.507)	data 0.000 (0.116)	eta 0:05:27	loss 0.0168 (0.0244)	lr 4.774575e-04
+epoch [42/50][60/78]	time 0.593 (0.507)	data 0.185 (0.117)	eta 0:05:25	loss 0.0311 (0.0254)	lr 4.774575e-04
+epoch [42/50][65/78]	time 0.386 (0.503)	data 0.000 (0.113)	eta 0:05:20	loss 0.0366 (0.0257)	lr 4.774575e-04
+epoch [42/50][70/78]	time 0.565 (0.504)	data 0.178 (0.113)	eta 0:05:18	loss 0.0212 (0.0256)	lr 4.774575e-04
+epoch [42/50][75/78]	time 0.386 (0.502)	data 0.000 (0.112)	eta 0:05:15	loss 0.0176 (0.0256)	lr 4.774575e-04
+Do evaluation on val set
+mAP score: 92.46787434747222
+epoch [43/50][5/78]	time 0.560 (0.708)	data 0.173 (0.320)	eta 0:07:18	loss 0.0350 (0.0250)	lr 3.891802e-04
+epoch [43/50][10/78]	time 0.387 (0.609)	data 0.000 (0.222)	eta 0:06:14	loss 0.0263 (0.0242)	lr 3.891802e-04
+epoch [43/50][15/78]	time 0.607 (0.582)	data 0.221 (0.195)	eta 0:05:54	loss 0.0242 (0.0236)	lr 3.891802e-04
+epoch [43/50][20/78]	time 0.387 (0.554)	data 0.000 (0.168)	eta 0:05:34	loss 0.0249 (0.0234)	lr 3.891802e-04
+epoch [43/50][25/78]	time 0.565 (0.545)	data 0.178 (0.158)	eta 0:05:26	loss 0.0170 (0.0230)	lr 3.891802e-04
+epoch [43/50][30/78]	time 0.386 (0.534)	data 0.000 (0.147)	eta 0:05:17	loss 0.0263 (0.0246)	lr 3.891802e-04
+epoch [43/50][35/78]	time 0.487 (0.527)	data 0.098 (0.140)	eta 0:05:10	loss 0.0090 (0.0239)	lr 3.891802e-04
+epoch [43/50][40/78]	time 0.412 (0.518)	data 0.000 (0.130)	eta 0:05:02	loss 0.0167 (0.0227)	lr 3.891802e-04
+epoch [43/50][45/78]	time 0.564 (0.514)	data 0.178 (0.127)	eta 0:04:57	loss 0.0190 (0.0236)	lr 3.891802e-04
+epoch [43/50][50/78]	time 0.388 (0.509)	data 0.000 (0.121)	eta 0:04:51	loss 0.0182 (0.0234)	lr 3.891802e-04
+epoch [43/50][55/78]	time 0.570 (0.505)	data 0.185 (0.117)	eta 0:04:47	loss 0.0122 (0.0230)	lr 3.891802e-04
+epoch [43/50][60/78]	time 0.387 (0.499)	data 0.000 (0.111)	eta 0:04:41	loss 0.0200 (0.0231)	lr 3.891802e-04
+epoch [43/50][65/78]	time 0.505 (0.497)	data 0.114 (0.109)	eta 0:04:37	loss 0.0093 (0.0226)	lr 3.891802e-04
+epoch [43/50][70/78]	time 0.386 (0.493)	data 0.000 (0.106)	eta 0:04:33	loss 0.0128 (0.0221)	lr 3.891802e-04
+epoch [43/50][75/78]	time 0.542 (0.492)	data 0.141 (0.105)	eta 0:04:30	loss 0.0150 (0.0226)	lr 3.891802e-04
+Do evaluation on val set
+mAP score: 92.46076366849219
+epoch [44/50][5/78]	time 0.481 (0.825)	data 0.091 (0.434)	eta 0:07:26	loss 0.0367 (0.0314)	lr 3.092333e-04
+epoch [44/50][10/78]	time 0.390 (0.636)	data 0.000 (0.245)	eta 0:05:40	loss 0.0114 (0.0246)	lr 3.092333e-04
+epoch [44/50][15/78]	time 0.390 (0.579)	data 0.000 (0.186)	eta 0:05:07	loss 0.0857 (0.0283)	lr 3.092333e-04
+epoch [44/50][20/78]	time 0.554 (0.558)	data 0.168 (0.164)	eta 0:04:53	loss 0.0116 (0.0277)	lr 3.092333e-04
+epoch [44/50][25/78]	time 0.386 (0.541)	data 0.000 (0.149)	eta 0:04:41	loss 0.0464 (0.0273)	lr 3.092333e-04
+epoch [44/50][30/78]	time 0.594 (0.537)	data 0.207 (0.144)	eta 0:04:36	loss 0.0335 (0.0269)	lr 3.092333e-04
+epoch [44/50][35/78]	time 0.387 (0.528)	data 0.000 (0.136)	eta 0:04:29	loss 0.0069 (0.0259)	lr 3.092333e-04
+epoch [44/50][40/78]	time 0.490 (0.524)	data 0.103 (0.133)	eta 0:04:25	loss 0.0391 (0.0247)	lr 3.092333e-04
+epoch [44/50][45/78]	time 0.387 (0.519)	data 0.000 (0.127)	eta 0:04:19	loss 0.0130 (0.0247)	lr 3.092333e-04
+epoch [44/50][50/78]	time 0.487 (0.515)	data 0.101 (0.124)	eta 0:04:15	loss 0.0308 (0.0250)	lr 3.092333e-04
+epoch [44/50][55/78]	time 0.386 (0.509)	data 0.000 (0.118)	eta 0:04:10	loss 0.0088 (0.0253)	lr 3.092333e-04
+epoch [44/50][60/78]	time 0.554 (0.509)	data 0.167 (0.118)	eta 0:04:07	loss 0.0270 (0.0254)	lr 3.092333e-04
+epoch [44/50][65/78]	time 0.386 (0.505)	data 0.000 (0.114)	eta 0:04:02	loss 0.0521 (0.0257)	lr 3.092333e-04
+epoch [44/50][70/78]	time 0.526 (0.503)	data 0.140 (0.112)	eta 0:03:59	loss 0.0560 (0.0266)	lr 3.092333e-04
+epoch [44/50][75/78]	time 0.386 (0.499)	data 0.000 (0.109)	eta 0:03:55	loss 0.0228 (0.0267)	lr 3.092333e-04
+Do evaluation on val set
+mAP score: 92.46384447739736
+epoch [45/50][5/78]	time 0.421 (0.688)	data 0.032 (0.294)	eta 0:05:18	loss 0.0143 (0.0198)	lr 2.379324e-04
+epoch [45/50][10/78]	time 0.386 (0.576)	data 0.000 (0.186)	eta 0:04:23	loss 0.0091 (0.0268)	lr 2.379324e-04
+epoch [45/50][15/78]	time 0.563 (0.551)	data 0.177 (0.162)	eta 0:04:09	loss 0.0496 (0.0275)	lr 2.379324e-04
+epoch [45/50][20/78]	time 0.419 (0.526)	data 0.033 (0.137)	eta 0:03:55	loss 0.0375 (0.0321)	lr 2.379324e-04
+epoch [45/50][25/78]	time 0.390 (0.534)	data 0.000 (0.144)	eta 0:03:56	loss 0.0219 (0.0288)	lr 2.379324e-04
+epoch [45/50][30/78]	time 0.578 (0.532)	data 0.192 (0.142)	eta 0:03:52	loss 0.0084 (0.0284)	lr 2.379324e-04
+epoch [45/50][35/78]	time 0.386 (0.526)	data 0.000 (0.137)	eta 0:03:47	loss 0.0084 (0.0278)	lr 2.379324e-04
+epoch [45/50][40/78]	time 0.696 (0.529)	data 0.308 (0.140)	eta 0:03:46	loss 0.0157 (0.0273)	lr 2.379324e-04
+epoch [45/50][45/78]	time 0.393 (0.521)	data 0.000 (0.132)	eta 0:03:40	loss 0.0413 (0.0282)	lr 2.379324e-04
+epoch [45/50][50/78]	time 0.567 (0.520)	data 0.177 (0.130)	eta 0:03:37	loss 0.0149 (0.0268)	lr 2.379324e-04
+epoch [45/50][55/78]	time 0.390 (0.516)	data 0.000 (0.126)	eta 0:03:33	loss 0.0283 (0.0261)	lr 2.379324e-04
+epoch [45/50][60/78]	time 0.588 (0.517)	data 0.201 (0.127)	eta 0:03:30	loss 0.0374 (0.0262)	lr 2.379324e-04
+epoch [45/50][65/78]	time 0.386 (0.515)	data 0.000 (0.125)	eta 0:03:27	loss 0.0385 (0.0266)	lr 2.379324e-04
+epoch [45/50][70/78]	time 0.664 (0.515)	data 0.278 (0.126)	eta 0:03:25	loss 0.0128 (0.0265)	lr 2.379324e-04
+epoch [45/50][75/78]	time 0.386 (0.513)	data 0.000 (0.124)	eta 0:03:21	loss 0.0140 (0.0262)	lr 2.379324e-04
+Do evaluation on val set
+mAP score: 92.48526634985235
+epoch [46/50][5/78]	time 0.547 (0.702)	data 0.159 (0.315)	eta 0:04:30	loss 0.0436 (0.0301)	lr 1.755588e-04
+epoch [46/50][10/78]	time 0.387 (0.574)	data 0.000 (0.185)	eta 0:03:38	loss 0.0157 (0.0276)	lr 1.755588e-04
+epoch [46/50][15/78]	time 0.516 (0.543)	data 0.128 (0.151)	eta 0:03:23	loss 0.0186 (0.0246)	lr 1.755588e-04
+epoch [46/50][20/78]	time 0.386 (0.521)	data 0.000 (0.128)	eta 0:03:12	loss 0.0140 (0.0265)	lr 1.755588e-04
+epoch [46/50][25/78]	time 0.598 (0.515)	data 0.207 (0.124)	eta 0:03:07	loss 0.0142 (0.0265)	lr 1.755588e-04
+epoch [46/50][30/78]	time 0.390 (0.503)	data 0.000 (0.112)	eta 0:03:01	loss 0.0089 (0.0261)	lr 1.755588e-04
+epoch [46/50][35/78]	time 0.583 (0.500)	data 0.193 (0.109)	eta 0:02:57	loss 0.0150 (0.0247)	lr 1.755588e-04
+epoch [46/50][40/78]	time 0.390 (0.494)	data 0.000 (0.103)	eta 0:02:52	loss 0.0362 (0.0243)	lr 1.755588e-04
+epoch [46/50][45/78]	time 0.552 (0.494)	data 0.161 (0.103)	eta 0:02:50	loss 0.0223 (0.0251)	lr 1.755588e-04
+epoch [46/50][50/78]	time 0.390 (0.489)	data 0.000 (0.098)	eta 0:02:46	loss 0.0184 (0.0252)	lr 1.755588e-04
+epoch [46/50][55/78]	time 0.477 (0.486)	data 0.087 (0.095)	eta 0:02:42	loss 0.0204 (0.0254)	lr 1.755588e-04
+epoch [46/50][60/78]	time 0.391 (0.481)	data 0.000 (0.091)	eta 0:02:38	loss 0.0402 (0.0257)	lr 1.755588e-04
+epoch [46/50][65/78]	time 0.512 (0.481)	data 0.122 (0.090)	eta 0:02:36	loss 0.0287 (0.0260)	lr 1.755588e-04
+epoch [46/50][70/78]	time 0.390 (0.478)	data 0.000 (0.088)	eta 0:02:33	loss 0.0373 (0.0260)	lr 1.755588e-04
+epoch [46/50][75/78]	time 0.515 (0.478)	data 0.125 (0.088)	eta 0:02:30	loss 0.0128 (0.0254)	lr 1.755588e-04
+Do evaluation on val set
+mAP score: 92.49322135145421
+epoch [47/50][5/78]	time 0.584 (0.723)	data 0.198 (0.331)	eta 0:03:42	loss 0.0445 (0.0370)	lr 1.223587e-04
+epoch [47/50][10/78]	time 0.387 (0.569)	data 0.000 (0.174)	eta 0:02:51	loss 0.0121 (0.0280)	lr 1.223587e-04
+epoch [47/50][15/78]	time 0.586 (0.537)	data 0.197 (0.143)	eta 0:02:39	loss 0.0236 (0.0283)	lr 1.223587e-04
+epoch [47/50][20/78]	time 0.391 (0.513)	data 0.000 (0.120)	eta 0:02:29	loss 0.0042 (0.0265)	lr 1.223587e-04
+epoch [47/50][25/78]	time 0.579 (0.503)	data 0.193 (0.112)	eta 0:02:24	loss 0.0244 (0.0264)	lr 1.223587e-04
+epoch [47/50][30/78]	time 0.387 (0.495)	data 0.000 (0.104)	eta 0:02:19	loss 0.0047 (0.0256)	lr 1.223587e-04
+epoch [47/50][35/78]	time 0.565 (0.492)	data 0.179 (0.102)	eta 0:02:16	loss 0.0396 (0.0246)	lr 1.223587e-04
+epoch [47/50][40/78]	time 0.387 (0.487)	data 0.000 (0.097)	eta 0:02:12	loss 0.0669 (0.0259)	lr 1.223587e-04
+epoch [47/50][45/78]	time 0.535 (0.486)	data 0.145 (0.097)	eta 0:02:09	loss 0.0470 (0.0264)	lr 1.223587e-04
+epoch [47/50][50/78]	time 0.391 (0.482)	data 0.000 (0.092)	eta 0:02:06	loss 0.0130 (0.0265)	lr 1.223587e-04
+epoch [47/50][55/78]	time 0.618 (0.484)	data 0.228 (0.094)	eta 0:02:04	loss 0.0096 (0.0257)	lr 1.223587e-04
+epoch [47/50][60/78]	time 0.390 (0.479)	data 0.000 (0.089)	eta 0:02:00	loss 0.0556 (0.0259)	lr 1.223587e-04
+epoch [47/50][65/78]	time 0.497 (0.477)	data 0.109 (0.087)	eta 0:01:57	loss 0.0166 (0.0250)	lr 1.223587e-04
+epoch [47/50][70/78]	time 0.387 (0.474)	data 0.000 (0.085)	eta 0:01:54	loss 0.0122 (0.0248)	lr 1.223587e-04
+epoch [47/50][75/78]	time 0.485 (0.476)	data 0.099 (0.087)	eta 0:01:52	loss 0.0277 (0.0243)	lr 1.223587e-04
+Do evaluation on val set
+mAP score: 92.49634548322426
+epoch [48/50][5/78]	time 0.716 (0.811)	data 0.329 (0.423)	eta 0:03:05	loss 0.0312 (0.0232)	lr 7.854210e-05
+epoch [48/50][10/78]	time 0.387 (0.631)	data 0.000 (0.244)	eta 0:02:21	loss 0.0312 (0.0306)	lr 7.854210e-05
+epoch [48/50][15/78]	time 0.506 (0.572)	data 0.120 (0.185)	eta 0:02:05	loss 0.0114 (0.0275)	lr 7.854210e-05
+epoch [48/50][20/78]	time 0.387 (0.548)	data 0.000 (0.161)	eta 0:01:57	loss 0.0184 (0.0278)	lr 7.854210e-05
+epoch [48/50][25/78]	time 0.484 (0.535)	data 0.097 (0.147)	eta 0:01:51	loss 0.0042 (0.0269)	lr 7.854210e-05
+epoch [48/50][30/78]	time 0.443 (0.524)	data 0.057 (0.135)	eta 0:01:46	loss 0.0187 (0.0271)	lr 7.854210e-05
+epoch [48/50][35/78]	time 0.388 (0.515)	data 0.000 (0.126)	eta 0:01:42	loss 0.0246 (0.0270)	lr 7.854210e-05
+epoch [48/50][40/78]	time 0.575 (0.511)	data 0.187 (0.121)	eta 0:01:39	loss 0.0255 (0.0270)	lr 7.854210e-05
+epoch [48/50][45/78]	time 0.391 (0.505)	data 0.000 (0.115)	eta 0:01:35	loss 0.0068 (0.0260)	lr 7.854210e-05
+epoch [48/50][50/78]	time 0.532 (0.501)	data 0.127 (0.111)	eta 0:01:32	loss 0.0410 (0.0259)	lr 7.854210e-05
+epoch [48/50][55/78]	time 0.388 (0.497)	data 0.000 (0.106)	eta 0:01:28	loss 0.0341 (0.0261)	lr 7.854210e-05
+epoch [48/50][60/78]	time 0.482 (0.495)	data 0.095 (0.104)	eta 0:01:26	loss 0.0199 (0.0262)	lr 7.854210e-05
+epoch [48/50][65/78]	time 0.580 (0.494)	data 0.166 (0.104)	eta 0:01:23	loss 0.0619 (0.0265)	lr 7.854210e-05
+epoch [48/50][70/78]	time 0.387 (0.491)	data 0.000 (0.100)	eta 0:01:20	loss 0.0472 (0.0268)	lr 7.854210e-05
+epoch [48/50][75/78]	time 0.540 (0.490)	data 0.154 (0.100)	eta 0:01:17	loss 0.0279 (0.0263)	lr 7.854210e-05
+Do evaluation on val set
+mAP score: 92.49555638516341
+epoch [49/50][5/78]	time 0.755 (0.747)	data 0.368 (0.360)	eta 0:01:52	loss 0.0377 (0.0238)	lr 4.428187e-05
+epoch [49/50][10/78]	time 0.415 (0.611)	data 0.000 (0.218)	eta 0:01:29	loss 0.0405 (0.0268)	lr 4.428187e-05
+epoch [49/50][15/78]	time 0.568 (0.575)	data 0.182 (0.183)	eta 0:01:21	loss 0.0539 (0.0280)	lr 4.428187e-05
+epoch [49/50][20/78]	time 0.387 (0.553)	data 0.000 (0.163)	eta 0:01:15	loss 0.0313 (0.0285)	lr 4.428187e-05
+epoch [49/50][25/78]	time 0.592 (0.541)	data 0.205 (0.152)	eta 0:01:10	loss 0.0386 (0.0268)	lr 4.428187e-05
+epoch [49/50][30/78]	time 0.389 (0.530)	data 0.000 (0.139)	eta 0:01:06	loss 0.0047 (0.0247)	lr 4.428187e-05
+epoch [49/50][35/78]	time 0.584 (0.526)	data 0.198 (0.135)	eta 0:01:03	loss 0.0318 (0.0246)	lr 4.428187e-05
+epoch [49/50][40/78]	time 0.387 (0.518)	data 0.000 (0.127)	eta 0:01:00	loss 0.0246 (0.0264)	lr 4.428187e-05
+epoch [49/50][45/78]	time 0.584 (0.518)	data 0.198 (0.127)	eta 0:00:57	loss 0.0128 (0.0267)	lr 4.428187e-05
+epoch [49/50][50/78]	time 0.387 (0.515)	data 0.000 (0.124)	eta 0:00:54	loss 0.0223 (0.0264)	lr 4.428187e-05
+epoch [49/50][55/78]	time 0.654 (0.516)	data 0.239 (0.124)	eta 0:00:52	loss 0.0177 (0.0260)	lr 4.428187e-05
+epoch [49/50][60/78]	time 0.387 (0.511)	data 0.000 (0.120)	eta 0:00:49	loss 0.0075 (0.0263)	lr 4.428187e-05
+epoch [49/50][65/78]	time 0.555 (0.511)	data 0.167 (0.120)	eta 0:00:46	loss 0.0218 (0.0256)	lr 4.428187e-05
+epoch [49/50][70/78]	time 0.387 (0.508)	data 0.000 (0.116)	eta 0:00:43	loss 0.0101 (0.0253)	lr 4.428187e-05
+epoch [49/50][75/78]	time 0.563 (0.507)	data 0.178 (0.116)	eta 0:00:41	loss 0.0313 (0.0267)	lr 4.428187e-05
+Do evaluation on val set
