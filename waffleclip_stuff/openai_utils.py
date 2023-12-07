@@ -1,1 +1,1 @@
-OPENAI_API_KEY = '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'
+OPENAI_API_KEY = 'sorry' #paste the key here, and be sure to add this file to .gitignore
