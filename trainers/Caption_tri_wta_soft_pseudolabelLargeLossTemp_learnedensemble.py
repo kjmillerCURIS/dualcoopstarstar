@@ -2,6 +2,7 @@ import os.path as osp
 import os
 import glob
 import itertools
+import math
 import numpy as np
 import pickle
 
@@ -327,6 +328,7 @@ class DenseCLIP(nn.Module):
         text_features = self.text_encoder(prompts, tokenized_prompts)
         text_features_pos = self.text_encoder(prompts_pos, tokenized_prompts)
         text_features_neg = self.text_encoder(prompts_neg, tokenized_prompts)
+        #print('hello there torch.max(tokenized_prompts.argmax(dim=-1))=%s'%(str(torch.max(tokenized_prompts.argmax(dim=-1)).item())))
         #chunk_size = 80
         #text_features = []
         #text_features_pos = []
@@ -446,7 +448,7 @@ def softlogits2siglogits(softlogits):
 
 
 @TRAINER_REGISTRY.register()
-class Caption_tri_wta_soft_pseudolabel_learnedensemble(TrainerX):
+class Caption_tri_wta_soft_pseudolabelLargeLossTemp_learnedensemble(TrainerX):
     ''' This inherits from TrainerX, however it will NOT look at the label during train-time! '''
 
     @torch.no_grad()
@@ -461,15 +463,17 @@ class Caption_tri_wta_soft_pseudolabel_learnedensemble(TrainerX):
         for pseudolabel_filename in tqdm(pseudolabel_filenames):
             self.evaluator.reset()
             checkpoint = torch.load(pseudolabel_filename, map_location='cpu')
-            pseudolabel_logits = checkpoint['pseudolabel_logits']
+            pseudolabel_probs = checkpoint['pseudolabel_probs']
             t = 0
             for batch in self.dm.train_loader_x_complete:
                 label = batch['label']
                 assert('img' not in batch)
                 assert(torch.all((label == 1) | (label == -1)).item())
                 idx = batch['idx']
-                logits_batch = pseudolabel_logits[idx,:]
-                self.evaluator.process({'default' : logits_batch}, label)
+                probs_batch = pseudolabel_probs[idx,:]
+                
+                #in this case, pseudolabels are 0 or 1, not logits, but we can still compute an mAP that's hopefully meaningful
+                self.evaluator.process({'default' : probs_batch}, label)
                 if t % 10 == 0:
                     print('t=%d'%(t))
 
@@ -556,7 +560,6 @@ class Caption_tri_wta_soft_pseudolabel_learnedensemble(TrainerX):
         classnames = self.dm.dataset.classnames
         classname_lists = get_classname_lists(classnames, cfg)
         self.classname_lists = classname_lists
-
         print('|||||||||||||||||||||||||||||||||||||| Building Caption_dual')
 
         print(f"Loading CLIP (backbone: {cfg.MODEL.BACKBONE.NAME})")
@@ -572,6 +575,7 @@ class Caption_tri_wta_soft_pseudolabel_learnedensemble(TrainerX):
             return
 
         print("Building custom CLIP")
+        # self.model = CustomCLIP(cfg, classnames, clip_model)
         self.model = DenseCLIP(cfg, self.classname_lists, clip_model)
 
         print("Turning off gradients in both the image and the text encoder")
@@ -603,75 +607,14 @@ class Caption_tri_wta_soft_pseudolabel_learnedensemble(TrainerX):
 
     def after_epoch(self):
         super().after_epoch()
-        if (self.epoch + 1) > 0 and (self.epoch + 1) % self.cfg.TRAIN.PSEUDOLABEL_UPDATE_FREQ == 0:
-            self.update_pseudolabels()
-            self.save_pseudolabels(self.epoch, self.output_dir)
+        self.save_pseudolabels(self.epoch, self.output_dir)
 
     def save_pseudolabels(self, epoch, output_dir, is_init=False):
         print('save_pseudolabels...')
-        checkpoint = {'epoch' : (epoch + 1 if not is_init else 'init'), 'pseudolabel_logits':self.pseudolabel_logits,'pseudolabel_weights':self.pseudolabel_weights}
+        checkpoint = {'epoch' : (epoch + 1 if not is_init else 'init'), 'pseudolabel_probs':self.pseudolabel_probs,'pseudolabel_weights':self.pseudolabel_weights}
         os.makedirs(output_dir, exist_ok=True)
         checkpoint_filename = osp.join(output_dir, 'pseudolabels.pth.tar-' + ('%03d'%(epoch + 1) if not is_init else 'init'))
         torch.save(checkpoint, checkpoint_filename)
-
-    #optional method to offest the pseudolabel logits by a constant bias in order to hit some "target" average probability
-    #could probably just do it via binary search since it's monotonic
-    #now, if you wanted to minimize the expected square difference between the per-batch avgprob and target, that would be harder
-    #but let's just assume for now that it's just a bias problem - we just wanna make the probs bigger without making any of them >1
-    #note that this will completely ignore self.pseudolabel_weights - it just looks at all of the logits
-    def adjust_pseudolabel_logits(self):
-        print('adjust_pseudolabel_logits...')
-        bias = self.adjust_pseudolabel_logits_helper()
-        print('arrived at pseudolabel adjustment bias of %f'%(bias))
-        self.pseudolabel_logits = self.pseudolabel_logits + torch.tensor(bias, device=self.device)
-
-    #will return bias
-    def adjust_pseudolabel_logits_helper(self):
-        def compute_avg_pseudolabel_prob(bias):
-            return torch.mean(torch.sum(torch.sigmoid(self.pseudolabel_logits + torch.tensor(bias, device=self.device)), dim=-1)).item()
-
-        lower = self.cfg.TRAIN.ADJUST_LOGITS_MIN_BIAS
-        upper = self.cfg.TRAIN.ADJUST_LOGITS_MAX_BIAS
-        target = self.cfg.TRAIN.ADJUST_LOGITS_TARGET
-        epsilon = self.cfg.TRAIN.ADJUST_LOGITS_EPSILON
-        maxiter = self.cfg.TRAIN.ADJUST_LOGITS_MAXITER
-        f_lower = compute_avg_pseudolabel_prob(lower)
-        f_upper = compute_avg_pseudolabel_prob(upper)
-        
-        #handle edge cases
-        assert(f_upper >= f_lower)
-        if np.fabs(f_lower - target) < epsilon and np.fabs(f_upper - target) < epsilon:
-            if np.fabs(f_lower - target) < np.fabs(f_upper - target):
-                return lower
-            else:
-                return upper
-        elif np.fabs(f_lower - target) < epsilon:
-            return lower
-        elif np.fabs(f_upper - target) < epsilon:
-            return upper
-        elif f_lower > target:
-            print('lower adjustment bound too high!')
-            return lower
-        elif f_upper < target:
-            print('upper adjustment bound too low!')
-            return upper
-        else:
-            assert(f_lower < target and target < f_upper)
-
-        #now we're ready for binary search!
-        for _ in range(maxiter):
-            midpoint = (lower + upper) / 2
-            f_mid = compute_avg_pseudolabel_prob(midpoint)
-            if np.fabs(f_mid - target) < epsilon:
-                return midpoint
-            if f_mid > target:
-                upper = midpoint
-            else:
-                lower = midpoint
-
-        #maxed out our iters
-        print('adjustment bsearch maxed out iters')
-        return (lower + upper) / 2
 
     #get text embeddings for initializing the pseudolabels
     #this would be the place to do ensembling
@@ -725,18 +668,16 @@ class Caption_tri_wta_soft_pseudolabel_learnedensemble(TrainerX):
             fixed_text_embeddings = fixed_text_embeddings / fixed_text_embeddings.norm(dim=-1, keepdim=True)
             return fixed_text_embeddings
 
-    def initialize_pseudolabels_global_only(self):
-        print('initialize_pseudolabels_global_only...')
+    def initialize_pseudolabels_top1_positive(self):
+        #do initialization (set self.init_pseudolabel_probs)
         num_samples = len(self.dm.dataset.train_x)
-        self.pseudolabel_logits = torch.zeros((num_samples, len(self.dm.dataset.classnames)), dtype=self.model.dtype, device=self.device)
-        self.pseudolabel_weights = torch.ones_like(self.pseudolabel_logits)
+        self.init_pseudolabel_probs = torch.zeros((num_samples,len(self.dm.dataset.classnames)),dtype=self.model.dtype,device=self.device)
 
         if self.cfg.TRAIN.INIT_WITH_ORIG_CLASSNAMES_ONLY:
             text_embeddings = self.get_initializing_text_embeddings_orig_classnames_only()
         else:
             text_embeddings = self.get_initializing_text_embeddings()
 
-        passed_logit_check = False
         for batch in tqdm(self.dm.train_loader_x_complete):
             images = batch['img'].to(self.device)
             idx = batch['idx'].to(self.device)
@@ -744,90 +685,79 @@ class Caption_tri_wta_soft_pseudolabel_learnedensemble(TrainerX):
             assert(len(image_embeddings.shape) == 2)
             assert(image_embeddings.shape[0] == images.shape[0])
             image_embeddings = image_embeddings / image_embeddings.norm(dim=-1, keepdim=True)
-            softlogits = self.model.model.logit_scale.exp() * image_embeddings @ text_embeddings.t()
-            siglogits = softlogits2siglogits(softlogits)
-            if not passed_logit_check:
-                diff = torch.max(torch.abs(torch.sigmoid(siglogits) - torch.softmax(softlogits, dim=1))).item()
-                print('softlogits vs siglogits ==> probs diff at most %s'%(str(diff)))
-                assert(diff < 1e-6)
-                passed_logit_check = True
+            scores = image_embeddings @ text_embeddings.t()
+            winners = torch.argmax(scores, dim=1)
+            self.init_pseudolabel_probs[idx, winners] = 1.0
 
-            self.pseudolabel_logits[idx,:] = siglogits
+        #do observation (set self.observed_mask)
+        if self.cfg.TRAIN.PSEUDOLABEL_OBSERVATION_METHOD == 'observe_positives':
+            self.observed_mask = self.init_pseudolabel_probs.detach().clone()
+        elif self.cfg.TRAIN.PSEUDOLABEL_OBSERVATION_METHOD == 'observe_nothing':
+            self.observed_mask = torch.zeros_like(self.init_pseudolabel_probs)
+        else:
+            assert(False)
+
+        #weights and bookkeeping
+        self.pseudolabel_weights = torch.ones_like(self.init_pseudolabel_probs)
+        self.pseudolabel_probs = self.init_pseudolabel_probs.detach().clone()
 
     #should call this before any training
     def initialize_pseudolabels(self):
         print('initialize_pseudolabels...')
         print(self.device)
         with torch.no_grad(): #NOTE: if your initialization method requires gradients, you'll have to modify this
-            if self.cfg.TRAIN.PSEUDOLABEL_INIT_METHOD == 'global_only':
-                self.initialize_pseudolabels_global_only()
+            if self.cfg.TRAIN.PSEUDOLABEL_INIT_METHOD == 'top1_positive':
+                self.initialize_pseudolabels_top1_positive()
             else:
                 assert(False)
 
-            if self.cfg.TRAIN.DO_ADJUST_LOGITS:
-                self.adjust_pseudolabel_logits()
-
         self.save_pseudolabels(None, self.output_dir, is_init=True)
 
-    #should call this after every K epochs, for some K
-    #(we can reconsider later whether it should be for every step...)
-    def update_pseudolabels(self):
-        print('update_pseudolabels...')
-        assert(self.cfg.TRAIN.PSEUDOLABEL_UPDATE_MODE == 'gaussian_grad')
+    def should_freeze_pseudolabels(self):
+        #special case where they should always be frozen
+        if self.cfg.TRAIN.MAX_EPOCH_FOR_DELTA_REL == 0 or self.cfg.TRAIN.DELTA_REL == 0.0:
+            assert(self.cfg.TRAIN.MAX_EPOCH_FOR_DELTA_REL == 0 and self.cfg.TRAIN.DELTA_REL == 0.0)
+            return True
 
-        for batch in tqdm(self.dm.train_loader_x_complete):
+        return self.epoch < self.cfg.TRAIN.PSEUDOLABEL_FREEZE_DURATION
 
-            #get grad
-            images = batch['img'].to(self.device)
-            with torch.no_grad():
-                output, _, _ = self.model(images)
-                pred_probs = torch.sigmoid(output)
+    #NOTE: This will have side effects!
+    #output should be logits
+    #This will update self.pseudolabel_probs (which is just for bookkeeping at this point)
+    #and self.pseudolabel_weights (which is always 1 at this point but could be for bookkeeping later)
+    def compute_loss_LargeLossTemp(self, idx, output):
+        #get loss_matrix and corrected_loss_matrix
+        #labels should be equal to init_pseudolabel_probs (trust me, just think of init_pseudolabel_probs as the "assumed" labels)
+        #then just 1 - labels to get corrected_loss_matrix
+        #it's okay to flip observed losses, they'll get zeroed out before being used to select the topK losses
+        #(when you put ones in self.observed_mask, you're doing that zeroing-out)
+        labels = self.init_pseudolabel_probs[idx,:]
+        loss_matrix = F.binary_cross_entropy_with_logits(output, labels, reduction='none')
+        corrected_loss_matrix = F.binary_cross_entropy_with_logits(output, 1 - labels, reduction='none')
 
-            idx = batch['idx'].to(self.device)
-            pseudolabel_logits = self.pseudolabel_logits[idx,:]
-            pseudolabel_logits.requires_grad_(True)
-            if pseudolabel_logits.grad is not None:
-                pseudolabel_logits.grad.zero_()
-            bce_loss = torch.sum(F.binary_cross_entropy_with_logits(pseudolabel_logits, pred_probs, reduction='none'))
-            bce_loss.backward()
-            pseudolabel_logits_grad = pseudolabel_logits.grad
+        #decide whether to freeze pseudolabels
+        if self.should_freeze_pseudolabels():
+            self.pseudolabel_probs[idx,:] = self.init_pseudolabel_probs[idx,:]
+            return torch.mean(torch.sum(self.pseudolabel_weights[idx,:] * loss_matrix, dim=-1))
 
-            with torch.no_grad():
-                #get gaussian
-                pseudolabel_probs = torch.sigmoid(pseudolabel_logits)
-                bandwidth = self.cfg.TRAIN.PSEUDOLABEL_UPDATE_GAUSSIAN_BANDWIDTH
-                pseudolabel_gaussians = 1.0 / (np.sqrt(2 * np.pi) * bandwidth) * torch.exp(-0.5 * torch.square(pseudolabel_probs - 0.5) / (bandwidth**2))
+        #figure out threshold
+        #you should use something like (delta_rel=0.2, max_epoch_for_delta_rel=9)
+        #OR, (delta_rel=0.04, max_epoch_for_delta_rel=49)
+        top_prop = min(self.epoch, self.cfg.TRAIN.MAX_EPOCH_FOR_DELTA_REL) * self.cfg.TRAIN.DELTA_REL / 100.0
+        k = math.ceil(top_prop * output.shape[0] * output.shape[1])
+        unobserved_loss = loss_matrix * (1 - self.observed_mask[idx,:])
+        topk = torch.topk(unobserved_loss.flatten(), k)
+        topk_lossvalue = topk.values[-1]
 
-                #do the update
-                stepsize = self.cfg.TRAIN.PSEUDOLABEL_UPDATE_STEPSIZE
-                self.pseudolabel_logits[idx,:] = self.pseudolabel_logits[idx,:] - stepsize*pseudolabel_gaussians*pseudolabel_logits_grad
-
-    #output, pseudolabel_logits both have shape (batch_size, num_classes)
-    #will return something with that same shape
-    def compute_individual_losses(self, output, pseudolabel_logits):
-        if self.cfg.TRAIN.LOSSFUNC == 'crossent':
-            pseudolabel_probs = torch.sigmoid(pseudolabel_logits)
-            return F.binary_cross_entropy_with_logits(output, pseudolabel_probs, reduction='none')
-        elif self.cfg.TRAIN.LOSSFUNC == 'ASL':
-            pseudolabel_probs = torch.sigmoid(pseudolabel_logits)
-            pos_losses = AsymmetricLoss_softmax_partial_fn(1)(output)
-            neg_losses = AsymmetricLoss_softmax_partial_fn(-1)(output)
-            return pseudolabel_probs * pos_losses + (1 - pseudolabel_probs) * neg_losses
-        else:
-            assert(False)
-
-    #output, pseudolabel_logits, pseudolabel_weights all have shape (batch_size, num_classes)
-    #will return a single scalar
-    def compute_loss(self, output, pseudolabel_logits, pseudolabel_weights):
-        assert(len(output.shape) == 2)
-        assert(output.shape == pseudolabel_logits.shape)
-        assert(output.shape == pseudolabel_weights.shape)
-        individual_losses = self.compute_individual_losses(output, pseudolabel_logits)
-        loss = torch.mean(torch.sum(pseudolabel_weights * individual_losses, dim=-1))
+        #apply threshold to flip some of the unobserved labels
+        final_loss_matrix = torch.where(unobserved_loss < topk_lossvalue, loss_matrix, corrected_loss_matrix)
+        loss = torch.mean(torch.sum(self.pseudolabel_weights[idx,:] * loss_matrix, dim=-1))
+        pseudolabel_probs = torch.where(unobserved_loss < topk_lossvalue, labels, 1 - labels)
+        self.pseudolabel_probs[idx,:] = pseudolabel_probs
         return loss
 
     def forward_backward(self, batch):
-        image, pseudolabel_logits, pseudolabel_weights = self.parse_batch_train(batch)
+        image, idx = self.parse_batch_train(batch)
 
         prec = self.cfg.TRAINER.Caption.PREC
         if prec == "amp":
@@ -841,7 +771,8 @@ class Caption_tri_wta_soft_pseudolabel_learnedensemble(TrainerX):
             self.scaler.update()
         else:
             output, _, _ = self.model(image)
-            loss = self.compute_loss(output, pseudolabel_logits, pseudolabel_weights)
+            assert(self.cfg.TRAIN.PSEUDOLABEL_UPDATE_MODE == 'LargeLossTemp')
+            loss = self.compute_loss_LargeLossTemp(idx, output)
             self.model_backward_and_update(loss)
 
         loss_summary = {
@@ -854,19 +785,14 @@ class Caption_tri_wta_soft_pseudolabel_learnedensemble(TrainerX):
 
         return loss_summary
 
-    #return input, pseudolabel_logits, pseudolabel_weights
-    #pseudolabel_logits will produce probabilities when plugged into a sigmoid (without any temperature)
-    #up to you to decide how those probabilities are used
-    #pseudolabel_weights will be between 0 and 1 and should indicate how much the loss from each pseudolabel gets counted
-    #you could make it completely binary if you want to just include or exclude pseudolabels
+    #return input, idx
     #note that we do NOT look at ground-truth labels!
     def parse_batch_train(self, batch):
         input = batch["img"]
         input = input.to(self.device)
         idx = batch["idx"]
-        pseudolabel_logits = self.pseudolabel_logits[idx,:]
-        pseudolabel_weights = self.pseudolabel_weights[idx,:]
-        return input, pseudolabel_logits, pseudolabel_weights
+        idx = idx.to(self.device)
+        return input, idx
 
     def load_model(self, directory, epoch=None):
         if not directory:

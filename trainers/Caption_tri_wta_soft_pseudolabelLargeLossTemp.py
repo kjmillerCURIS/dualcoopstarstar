@@ -1,7 +1,7 @@
 import os.path as osp
 import os
 import glob
-import itertools
+import math
 import numpy as np
 import pickle
 
@@ -24,8 +24,6 @@ from .utils import soft_cross_entropy, softmax_sigmoid_BCEloss, \
     norm_logits_BCEloss, sigmoid_focal_loss, sigmoid_ASL_loss, dualcoop_loss,dualcoop_softmax_loss
 from .loss_utils import AsymmetricLoss_softmax_partial_fn
 from .fixed_prompt_utils import FIXED_PROMPTS_DICT
-from llm_utils import get_classname_lists
-from .efficient_text_encoder import EfficientTextEncoder
 _tokenizer = _Tokenizer()
 
 
@@ -47,37 +45,33 @@ def load_clip_to_cpu(cfg):
     return model
 
 
-#class TextEncoder(nn.Module):
-#    def __init__(self, clip_model):
-#        super().__init__()
-#        self.transformer = clip_model.transformer
-#        self.positional_embedding = clip_model.positional_embedding
-#        self.ln_final = clip_model.ln_final
-#        self.text_projection = clip_model.text_projection
-#        self.dtype = clip_model.dtype
-#
-#    def forward(self, prompts, tokenized_prompts):
-#        x = prompts + self.positional_embedding.type(self.dtype)
-#        x = x.permute(1, 0, 2)  # NLD -> LND
-#        x = self.transformer(x)
-#        x = x.permute(1, 0, 2)  # LND -> NLD
-#        x = self.ln_final(x).type(self.dtype)
-#
-#        # x.shape = [batch_size, n_ctx, transformer.width]
-#        # take features from the eot embedding (eot_token is the highest number in each sequence)
-#        x = x[torch.arange(x.shape[0]), tokenized_prompts.argmax(dim=-1)] @ self.text_projection
-#
-#        return x
+class TextEncoder(nn.Module):
+    def __init__(self, clip_model):
+        super().__init__()
+        self.transformer = clip_model.transformer
+        self.positional_embedding = clip_model.positional_embedding
+        self.ln_final = clip_model.ln_final
+        self.text_projection = clip_model.text_projection
+        self.dtype = clip_model.dtype
+
+    def forward(self, prompts, tokenized_prompts):
+        x = prompts + self.positional_embedding.type(self.dtype)
+        x = x.permute(1, 0, 2)  # NLD -> LND
+        x = self.transformer(x)
+        x = x.permute(1, 0, 2)  # LND -> NLD
+        x = self.ln_final(x).type(self.dtype)
+
+        # x.shape = [batch_size, n_ctx, transformer.width]
+        # take features from the eot embedding (eot_token is the highest number in each sequence)
+        x = x[torch.arange(x.shape[0]), tokenized_prompts.argmax(dim=-1)] @ self.text_projection
+
+        return x
 
 
 class PromptLearner(nn.Module):
-    #classname_lists should be a list of lists of classnames, one inner list per each class
-    #all inner lists should be the same length
-    def __init__(self, cfg, classname_lists, clip_model):
+    def __init__(self, cfg, classnames, clip_model):
         super().__init__()
-        n_cls = len(classname_lists)
-        ensemble_size = len(classname_lists[0])
-        assert(all([len(l) == ensemble_size for l in classname_lists]))
+        n_cls = len(classnames)
         n_ctx = cfg.TRAINER.Caption.N_CTX
         ctx_init = cfg.TRAINER.Caption.CTX_INIT
         dtype = clip_model.dtype
@@ -86,26 +80,16 @@ class PromptLearner(nn.Module):
         # cfg_imsize = cfg.INPUT.SIZE[0]
         # assert cfg_imsize == clip_imsize, f"cfg_imsize ({cfg_imsize}) must equal to clip_imsize ({clip_imsize})"
 
-        self.three_separate_ensembles = cfg.TRAINER.Caption.THREE_SEPARATE_ENSEMBLES
-        if self.three_separate_ensembles:
-            ensemble_logits_evi = torch.empty(n_cls, ensemble_size, dtype=dtype)
-            ensemble_logits_pos = torch.empty(n_cls, ensemble_size, dtype=dtype)
-            ensemble_logits_neg = torch.empty(n_cls, ensemble_size, dtype=dtype)
-            nn.init.normal_(ensemble_logits_evi)
-            nn.init.normal_(ensemble_logits_pos)
-            nn.init.normal_(ensemble_logits_neg)
-            self.ensemble_logits_evi = nn.Parameter(ensemble_logits_evi)
-            self.ensemble_logits_pos = nn.Parameter(ensemble_logits_pos)
-            self.ensemble_logits_neg = nn.Parameter(ensemble_logits_neg)
-        else:
-            ensemble_logits = torch.empty(n_cls, ensemble_size, dtype=dtype)
-            nn.init.normal_(ensemble_logits)
-            self.ensemble_logits = nn.Parameter(ensemble_logits)
-
         if ctx_init:
-            assert(False)
-            #this would give an error where only the evidential prompt is defined
-            #if you want to add support for initialization, just copy from Caption_tri_wta_soft.py
+            # use given words to initialize context vectors
+            ctx_init = ctx_init.replace("_", " ")
+            n_ctx = len(ctx_init.split(" "))
+            prompt = clip.tokenize(ctx_init)
+            with torch.no_grad():
+                embedding = clip_model.token_embedding(prompt).type(dtype)
+            ctx_vectors = embedding[0, 1 : 1 + n_ctx, :]
+            prompt_prefix = ctx_init
+
         else:
             # random initialization
             if cfg.TRAINER.Caption.CSC:
@@ -130,7 +114,7 @@ class PromptLearner(nn.Module):
         self.ctx = nn.Parameter(ctx_vectors)  # to be optimized
         self.ctx_pos = nn.Parameter(ctx_vectors_pos)  # to be optimized
         self.ctx_neg = nn.Parameter(ctx_vectors_neg)  # to be optimized
-
+        
         # temperature = torch.tensor(4.6, dtype=dtype)  # 
         # temperature = torch.tensor(4.24, dtype=dtype)  # 70
         temperature = torch.tensor(3.91, dtype=dtype)  # 50
@@ -142,58 +126,44 @@ class PromptLearner(nn.Module):
             bias = torch.tensor(0.0, dtype=dtype) #trust me bro, 0 is the most reasonable default here
             self.bias = nn.Parameter(bias)
 
-        classname_lists = [[name.replace("_", " ") for name in l] for l in classname_lists]
-        name_lens = [[len(_tokenizer.encode(name)) for name in l] for l in classname_lists]
-        prompts = [[prompt_prefix + " " + name + "." for name in l] for l in classname_lists]
+        classnames = [name.replace("_", " ") for name in classnames]
+        name_lens = [len(_tokenizer.encode(name)) for name in classnames]
+        prompts = [prompt_prefix + " " + name + "." for name in classnames]
 
-        tokenized_prompts = torch.stack([clip.tokenize(p_list) for p_list in prompts])
+        tokenized_prompts = torch.cat([clip.tokenize(p) for p in prompts])
         with torch.no_grad():
             embedding = clip_model.token_embedding(tokenized_prompts).type(dtype)
-
-        assert(embedding.shape == (n_cls, ensemble_size, embedding.shape[2], ctx_dim))
 
         # These token vectors will be saved when in save_model(),
         # but they should be ignored in load_model() as we want to use
         # those computed using the current class names
-        self.register_buffer("token_prefix", embedding[:, :, :1, :])  # SOS
-        self.register_buffer("token_suffix", embedding[:, :, 1 + n_ctx :, :])  # CLS, EOS
+        self.register_buffer("token_prefix", embedding[:, :1, :])  # SOS
+        self.register_buffer("token_suffix", embedding[:, 1 + n_ctx :, :])  # CLS, EOS
 
         # class agnostic token suffix
-        prompts_nocls = [[prompt_prefix + "."] * ensemble_size] * n_cls
-        tokenized_prompts_nocls = torch.stack([clip.tokenize(p_list) for p_list in prompts_nocls])
+        prompts_nocls = [prompt_prefix + "."] * len(classnames)
+        tokenized_prompts_nocls = torch.cat([clip.tokenize(p) for p in prompts_nocls])
         with torch.no_grad():
             embedding_nocls = clip_model.token_embedding(tokenized_prompts_nocls).type(dtype)
-
-        self.register_buffer("token_suffix_nocls", embedding_nocls[:, :, 1 + n_ctx :, :])  # EOS
+        self.register_buffer("token_suffix_nocls", embedding_nocls[:, 1 + n_ctx :, :])  # EOS
 
         self.n_cls = n_cls
-        self.ensemble_size = ensemble_size
         self.n_ctx = n_ctx
         self.tokenized_prompts = tokenized_prompts  # torch.Tensor
         self.name_lens = name_lens
         self.class_token_position = cfg.TRAINER.Caption.CLASS_TOKEN_POSITION
 
-    #return prompts, prompts_pos, prompts_neg, self.temperature, self.spatial_T
-    #prompts/prompts_pos/prompts_neg will be shape (n_cls, ensemble_size, num_tokens, token_dim)
     def forward(self, neg_prompt_wcls=True):
         """
-        Returns current learned ctx embeddings, concatenated with cls word embeddings.
+        Returns current learned ctx embeddings, concated with cls word embeddings.
         """
         ctx = self.ctx
         ctx_pos = self.ctx_pos
         ctx_neg = self.ctx_neg
-        if ctx.dim() == 2: #(n_ctx, dim)
-            ctx = ctx.unsqueeze(0).unsqueeze(0).expand(self.n_cls, self.ensemble_size, -1, -1)
-            ctx_pos = ctx_pos.unsqueeze(0).unsqueeze(0).expand(self.n_cls, self.ensemble_size, -1, -1)
-            ctx_neg = ctx_neg.unsqueeze(0).unsqueeze(0).expand(self.n_cls, self.ensemble_size, -1, -1)
-        elif ctx.dim() == 3: #(n_cls, n_ctx, dim)
-            ctx = ctx.unsqueeze(1).expand(-1, self.ensemble_size, -1, -1)
-            ctx_pos = ctx_pos.unsqueeze(1).expand(-1, self.ensemble_size, -1, -1)
-            ctx_neg = ctx_neg.unsqueeze(1).expand(-1, self.ensemble_size, -1, -1)
-        else:
-            assert(False)
-
-        assert(ctx.shape == (self.n_cls, self.ensemble_size, self.n_ctx, ctx.shape[-1]))
+        if ctx.dim() == 2:
+            ctx = ctx.unsqueeze(0).expand(self.n_cls, -1, -1)
+            ctx_pos = ctx_pos.unsqueeze(0).expand(self.n_cls, -1, -1)
+            ctx_neg = ctx_neg.unsqueeze(0).expand(self.n_cls, -1, -1)
 
         prefix = self.token_prefix
         suffix = self.token_suffix
@@ -202,65 +172,98 @@ class PromptLearner(nn.Module):
         if self.class_token_position == "end":
             prompts = torch.cat(
                 [
-                    prefix,  # (n_cls, ensemble_size, 1, dim)
-                    ctx,     # (n_cls, ensemble_size, n_ctx, dim)
-                    suffix,  # (n_cls, ensemble_size, *, dim)
+                    prefix,  # (n_cls, 1, dim)
+                    ctx,     # (n_cls, n_ctx, dim)
+                    suffix,  # (n_cls, *, dim)
                 ],
-                dim=-2,
+                dim=1,
             )
 
             prompts_pos = torch.cat(
                 [
-                    prefix,  # (n_cls, ensemble_size, 1, dim)
-                    ctx_pos, # (n_cls, ensemble_size, n_ctx, dim)
-                    suffix,  # (n_cls, ensemble_size, *, dim)
+                    prefix,  # (n_cls, 1, dim)
+                    ctx_pos,     # (n_cls, n_ctx, dim)
+                    suffix,  # (n_cls, *, dim)
                 ],
-                dim=-2,
+                dim=1,
             )
 
             if neg_prompt_wcls:
                 prompts_neg = torch.cat(
                     [
-                        prefix,  # (n_cls, ensemble_size, 1, dim)
-                        ctx_neg, # (n_cls, ensemble_size, n_ctx, dim)
-                        suffix,  # (n_cls, ensemble_size, *, dim)
+                        prefix,  # (n_cls, 1, dim)
+                        ctx_neg,     # (n_cls, n_ctx, dim)
+                        suffix,  # (n_cls, *, dim)
                     ],
-                    dim=-2,
+                    dim=1,
                 )
             else:
                 prompts_neg = torch.cat(
                     [
-                        prefix,        # (n_cls, ensemble_size, 1, dim)
-                        ctx_neg,       # (n_cls, ensemble_size, n_ctx, dim)
-                        suffix_nocls,  # (n_cls, ensemble_size, *, dim)
+                        prefix,  # (n_cls, 1, dim)
+                        ctx_neg,     # (n_cls, n_ctx, dim)
+                        suffix_nocls,  # (n_cls, *, dim)
                     ],
-                    dim=-2,
+                    dim=1,
                 )
 
+
+        elif self.class_token_position == "middle":
+            half_n_ctx = self.n_ctx // 2
+            prompts = []
+            for i in range(self.n_cls):
+                name_len = self.name_lens[i]
+                prefix_i = prefix[i : i + 1, :, :]
+                class_i = suffix[i : i + 1, :name_len, :]
+                suffix_i = suffix[i : i + 1, name_len:, :]
+                ctx_i_half1 = ctx[i : i + 1, :half_n_ctx, :]
+                ctx_i_half2 = ctx[i : i + 1, half_n_ctx:, :]
+                prompt = torch.cat(
+                    [
+                        prefix_i,     # (1, 1, dim)
+                        ctx_i_half1,  # (1, n_ctx//2, dim)
+                        class_i,      # (1, name_len, dim)
+                        ctx_i_half2,  # (1, n_ctx//2, dim)
+                        suffix_i,     # (1, *, dim)
+                    ],
+                    dim=1,
+                )
+                prompts.append(prompt)
+            prompts = torch.cat(prompts, dim=0)
+
+        elif self.class_token_position == "front":
+            prompts = []
+            for i in range(self.n_cls):
+                name_len = self.name_lens[i]
+                prefix_i = prefix[i : i + 1, :, :]
+                class_i = suffix[i : i + 1, :name_len, :]
+                suffix_i = suffix[i : i + 1, name_len:, :]
+                ctx_i = ctx[i : i + 1, :, :]
+                prompt = torch.cat(
+                    [
+                        prefix_i,  # (1, 1, dim)
+                        class_i,   # (1, name_len, dim)
+                        ctx_i,     # (1, n_ctx, dim)
+                        suffix_i,  # (1, *, dim)
+                    ],
+                    dim=1,
+                )
+                prompts.append(prompt)
+            prompts = torch.cat(prompts, dim=0)
+
         else:
-            #don't acccept "middle" or "front", those were currently implemented to only have evidential prompt
-            #plus it's too much to support
             raise ValueError
 
-        if self.three_separate_ensembles:
-            ensemble_logits_evi = self.ensemble_logits_evi
-            ensemble_logits_pos = self.ensemble_logits_pos
-            ensemble_logits_neg = self.ensemble_logits_neg
-        else:
-            ensemble_logits_evi = self.ensemble_logits
-            ensemble_logits_pos = self.ensemble_logits
-            ensemble_logits_neg = self.ensemble_logits
-
-        return prompts, prompts_pos, prompts_neg, self.temperature, self.spatial_T, ensemble_logits_evi, ensemble_logits_pos, ensemble_logits_neg
+        return prompts, prompts_pos, prompts_neg, self.temperature, self.spatial_T
 
 
 class DenseCLIP(nn.Module):
-    def __init__(self, cfg, classname_lists, clip_model, return_interm_layers=False):
+    def __init__(self, cfg, classnames, clip_model, return_interm_layers=False):
         super().__init__()
         self.cfg = cfg
-        self.prompt_learner = PromptLearner(cfg, classname_lists, clip_model)
+        self.prompt_learner = PromptLearner(cfg, classnames, clip_model)
         self.tokenized_prompts = self.prompt_learner.tokenized_prompts
-        self.text_encoder = EfficientTextEncoder(clip_model)
+        self.text_encoder = TextEncoder(clip_model)
 
         self.model = clip_model
         self.return_interm_layers = return_interm_layers
@@ -274,7 +277,7 @@ class DenseCLIP(nn.Module):
         self.v_linear_bias = self.model.visual.attnpool.v_proj.bias
         self.c_linear_weight = self.model.visual.attnpool.c_proj.weight
         self.c_linear_bias = self.model.visual.attnpool.c_proj.bias
-
+        
         self.logit_scale = clip_model.logit_scale
         self.dtype = clip_model.dtype
 
@@ -285,7 +288,7 @@ class DenseCLIP(nn.Module):
         temperature_wta = torch.tensor(5.3, dtype=self.dtype)  # 50
         self.temperature_wta = nn.Parameter(temperature_wta)
 
-
+    
     def encode_image(self, x):
         def stem(x):
             for conv, bn in [(self.visual_encoder.conv1, self.visual_encoder.bn1), \
@@ -301,7 +304,7 @@ class DenseCLIP(nn.Module):
         x = self.visual_encoder.layer3(x)
         x = self.visual_encoder.layer4(x)
         return x
-
+    
     def forward(self, image, norm=True):
         image_feat = self.encode_image(image)
         b, c, h, w = image_feat.shape
@@ -310,64 +313,25 @@ class DenseCLIP(nn.Module):
         x = F.linear(x, self.v_linear_weight, self.v_linear_bias)
         x = F.linear(x, self.c_linear_weight, self.c_linear_bias)
         image_features = x
-
+        
+        image_feature_, _ = self.model.visual.attnpool(image_feat, if_pos=False)
         # ===============================================================
 
-        prompts, prompts_pos, prompts_neg, _, spatial_T, ensemble_logits_evi, ensemble_logits_pos, ensemble_logits_neg = self.prompt_learner()
-
+        prompts, prompts_pos, prompts_neg, _, spatial_T = self.prompt_learner()
         tokenized_prompts = self.tokenized_prompts
-
-        #flatten
-        tokenized_prompts = torch.flatten(tokenized_prompts, start_dim=0, end_dim=1)
-        prompts = torch.flatten(prompts, start_dim=0, end_dim=1)
-        prompts_pos = torch.flatten(prompts_pos, start_dim=0, end_dim=1)
-        prompts_neg = torch.flatten(prompts_neg, start_dim=0, end_dim=1)
-
-        #process
         text_features = self.text_encoder(prompts, tokenized_prompts)
         text_features_pos = self.text_encoder(prompts_pos, tokenized_prompts)
         text_features_neg = self.text_encoder(prompts_neg, tokenized_prompts)
-        #chunk_size = 80
-        #text_features = []
-        #text_features_pos = []
-        #text_features_neg = []
-        #cur_t = 0
-        #while cur_t < tokenized_prompts.shape[0]:
-        #    chunk_start = cur_t
-        #    chunk_end = min(cur_t + chunk_size, tokenized_prompts.shape[0])
-        #    text_features.append(self.text_encoder(prompts[chunk_start:chunk_end], tokenized_prompts[chunk_start:chunk_end]))
-        #    text_features_pos.append(self.text_encoder(prompts_pos[chunk_start:chunk_end], tokenized_prompts[chunk_start:chunk_end]))
-        #    text_features_neg.append(self.text_encoder(prompts_neg[chunk_start:chunk_end], tokenized_prompts[chunk_start:chunk_end]))
-        #    cur_t += chunk_size
-        #
-        #text_features = torch.cat(text_features)
-        #text_features_pos = torch.cat(text_features_pos)
-        #text_features_neg = torch.cat(text_features_neg)
-
-        #unflatten
-        text_features = torch.unflatten(text_features, 0, (self.prompt_learner.n_cls, self.prompt_learner.ensemble_size))
-        text_features_pos = torch.unflatten(text_features_pos, 0, (self.prompt_learner.n_cls, self.prompt_learner.ensemble_size))
-        text_features_neg = torch.unflatten(text_features_neg, 0, (self.prompt_learner.n_cls, self.prompt_learner.ensemble_size))
-
-        #normalize
+    
         image_features = image_features / image_features.norm(dim=-1, keepdim=True)
+        image_feature_ = image_feature_ / image_feature_.norm(dim=-1, keepdim=True)
         text_features = text_features / text_features.norm(dim=-1, keepdim=True)
         text_features_pos = text_features_pos / text_features_pos.norm(dim=-1, keepdim=True)
         text_features_neg = text_features_neg / text_features_neg.norm(dim=-1, keepdim=True)
 
-        #the ensembling part
-        text_features = torch.bmm(text_features.permute(0,2,1), F.softmax(ensemble_logits_evi, dim=1).unsqueeze(-1)).squeeze(-1)
-        text_features_pos = torch.bmm(text_features_pos.permute(0,2,1), F.softmax(ensemble_logits_pos, dim=1).unsqueeze(-1)).squeeze(-1)
-        text_features_neg = torch.bmm(text_features_neg.permute(0,2,1), F.softmax(ensemble_logits_neg, dim=1).unsqueeze(-1)).squeeze(-1)
-        assert(text_features.shape == (self.prompt_learner.n_cls, image_features.shape[-1]))
-        text_features = text_features / text_features.norm(dim=-1, keepdim=True)
-        text_features_pos = text_features_pos / text_features_pos.norm(dim=-1, keepdim=True)
-        text_features_neg = text_features_neg / text_features_neg.norm(dim=-1, keepdim=True)
-
-        #the rest of it...
-        logit_scale_pos = self.temperature_pos.exp()
-        logit_scale_neg = self.temperature_neg.exp()
-        logit_scale_wta = self.temperature_wta.exp()
+        logit_scale_pos = self.temperature_pos.exp() 
+        logit_scale_neg = self.temperature_neg.exp() 
+        logit_scale_wta = self.temperature_wta.exp() 
         logits = image_features @ text_features.t()    #  HW * B * C,  cls * C,  HW * B * cls
         logits_pos = logit_scale_pos * image_features @ text_features_pos.t()    #  HW * B * C,  cls * C,  HW * B * cls
         logits_neg = logit_scale_neg * image_features @ text_features_neg.t()    #  HW * B * C,  cls * C,  HW * B * cls
@@ -416,21 +380,32 @@ class DenseCLIP(nn.Module):
         else:
             raise ValueError
 
+
+
+        
+        logits_g = image_feature_ @ text_features.t()    # B * C,  cls * C,  B * cls
+        logits_pos_g = logit_scale_pos * image_feature_ @ text_features_pos.t()    # B * C,  cls * C,  B * cls
+        logits_neg_g = logit_scale_neg * image_feature_ @ text_features_neg.t() 
+
         prob_ = torch.nn.functional.softmax(logits * spatial_T.exp(), dim=0)
         logits_pos = torch.sum(logits_pos * prob_, dim=0)
         logits_neg = torch.sum(logits_neg * prob_, dim=0)
+        
+  
 
         logits_ = torch.cat([torch.unsqueeze(logits_neg,1), torch.unsqueeze(logits_pos,1)], dim=1)
+        logits_g = torch.cat([torch.unsqueeze(logits_neg_g,1), torch.unsqueeze(logits_pos_g,1)], dim=1)
 
         #collapse into a single logit
         logits_ = logits_[:,1,:] - logits_[:,0,:]
-
+        logits_g = logits_g[:,1,:] - logits_g[:,0,:]
+        
         if self.cfg.TRAINER.Caption.USE_BIAS:
             logits_ = logits_ + self.prompt_learner.bias #keep it in prompt_learner so it'll be learnable
 
-        return logits_, image_features, text_features
+        return logits_g, logits_, image_features, text_features
 
-
+        
 def softlogits2siglogits(softlogits):
     #how to turn softmax logits into sigmoid logits?
     #probs[i] = exp(-softlogits[i]) / sum_j exp(-softlogits[j])
@@ -446,7 +421,7 @@ def softlogits2siglogits(softlogits):
 
 
 @TRAINER_REGISTRY.register()
-class Caption_tri_wta_soft_pseudolabel_learnedensemble(TrainerX):
+class Caption_tri_wta_soft_pseudolabelLargeLossTemp(TrainerX):
     ''' This inherits from TrainerX, however it will NOT look at the label during train-time! '''
 
     @torch.no_grad()
@@ -461,15 +436,17 @@ class Caption_tri_wta_soft_pseudolabel_learnedensemble(TrainerX):
         for pseudolabel_filename in tqdm(pseudolabel_filenames):
             self.evaluator.reset()
             checkpoint = torch.load(pseudolabel_filename, map_location='cpu')
-            pseudolabel_logits = checkpoint['pseudolabel_logits']
+            pseudolabel_probs = checkpoint['pseudolabel_probs']
             t = 0
             for batch in self.dm.train_loader_x_complete:
                 label = batch['label']
                 assert('img' not in batch)
                 assert(torch.all((label == 1) | (label == -1)).item())
                 idx = batch['idx']
-                logits_batch = pseudolabel_logits[idx,:]
-                self.evaluator.process({'default' : logits_batch}, label)
+                probs_batch = pseudolabel_probs[idx,:]
+                
+                #in this case, pseudolabels are 0 or 1, not logits, but we can still compute an mAP that's hopefully meaningful
+                self.evaluator.process({'default' : probs_batch}, label)
                 if t % 10 == 0:
                     print('t=%d'%(t))
 
@@ -519,7 +496,7 @@ class Caption_tri_wta_soft_pseudolabel_learnedensemble(TrainerX):
                 softlogits = self.clip_model.logit_scale.exp() * image_embeddings @ text_embeddings.t()
                 logits = softlogits2siglogits(softlogits)
             else:
-                logits, _, _ = self.model_inference(input)
+                _, logits, _, _ = self.model_inference(input)
 
             self.evaluator.process({'default' : logits}, label)
 
@@ -550,13 +527,10 @@ class Caption_tri_wta_soft_pseudolabel_learnedensemble(TrainerX):
     def build_model(self):
         if self.cfg.COMPUTE_RANDOM_CHANCE or self.cfg.EVAL_TRAINING_PSEUDOLABELS:
             return
-
+        
         cfg = self.cfg
-
+        
         classnames = self.dm.dataset.classnames
-        classname_lists = get_classname_lists(classnames, cfg)
-        self.classname_lists = classname_lists
-
         print('|||||||||||||||||||||||||||||||||||||| Building Caption_dual')
 
         print(f"Loading CLIP (backbone: {cfg.MODEL.BACKBONE.NAME})")
@@ -572,7 +546,8 @@ class Caption_tri_wta_soft_pseudolabel_learnedensemble(TrainerX):
             return
 
         print("Building custom CLIP")
-        self.model = DenseCLIP(cfg, self.classname_lists, clip_model)
+        # self.model = CustomCLIP(cfg, classnames, clip_model)
+        self.model = DenseCLIP(cfg, classnames, clip_model)
 
         print("Turning off gradients in both the image and the text encoder")
         for name, param in self.model.named_parameters():
@@ -603,75 +578,14 @@ class Caption_tri_wta_soft_pseudolabel_learnedensemble(TrainerX):
 
     def after_epoch(self):
         super().after_epoch()
-        if (self.epoch + 1) > 0 and (self.epoch + 1) % self.cfg.TRAIN.PSEUDOLABEL_UPDATE_FREQ == 0:
-            self.update_pseudolabels()
-            self.save_pseudolabels(self.epoch, self.output_dir)
+        self.save_pseudolabels(self.epoch, self.output_dir)
 
     def save_pseudolabels(self, epoch, output_dir, is_init=False):
         print('save_pseudolabels...')
-        checkpoint = {'epoch' : (epoch + 1 if not is_init else 'init'), 'pseudolabel_logits':self.pseudolabel_logits,'pseudolabel_weights':self.pseudolabel_weights}
+        checkpoint = {'epoch' : (epoch + 1 if not is_init else 'init'), 'pseudolabel_probs':self.pseudolabel_probs,'pseudolabel_weights':self.pseudolabel_weights}
         os.makedirs(output_dir, exist_ok=True)
         checkpoint_filename = osp.join(output_dir, 'pseudolabels.pth.tar-' + ('%03d'%(epoch + 1) if not is_init else 'init'))
         torch.save(checkpoint, checkpoint_filename)
-
-    #optional method to offest the pseudolabel logits by a constant bias in order to hit some "target" average probability
-    #could probably just do it via binary search since it's monotonic
-    #now, if you wanted to minimize the expected square difference between the per-batch avgprob and target, that would be harder
-    #but let's just assume for now that it's just a bias problem - we just wanna make the probs bigger without making any of them >1
-    #note that this will completely ignore self.pseudolabel_weights - it just looks at all of the logits
-    def adjust_pseudolabel_logits(self):
-        print('adjust_pseudolabel_logits...')
-        bias = self.adjust_pseudolabel_logits_helper()
-        print('arrived at pseudolabel adjustment bias of %f'%(bias))
-        self.pseudolabel_logits = self.pseudolabel_logits + torch.tensor(bias, device=self.device)
-
-    #will return bias
-    def adjust_pseudolabel_logits_helper(self):
-        def compute_avg_pseudolabel_prob(bias):
-            return torch.mean(torch.sum(torch.sigmoid(self.pseudolabel_logits + torch.tensor(bias, device=self.device)), dim=-1)).item()
-
-        lower = self.cfg.TRAIN.ADJUST_LOGITS_MIN_BIAS
-        upper = self.cfg.TRAIN.ADJUST_LOGITS_MAX_BIAS
-        target = self.cfg.TRAIN.ADJUST_LOGITS_TARGET
-        epsilon = self.cfg.TRAIN.ADJUST_LOGITS_EPSILON
-        maxiter = self.cfg.TRAIN.ADJUST_LOGITS_MAXITER
-        f_lower = compute_avg_pseudolabel_prob(lower)
-        f_upper = compute_avg_pseudolabel_prob(upper)
-        
-        #handle edge cases
-        assert(f_upper >= f_lower)
-        if np.fabs(f_lower - target) < epsilon and np.fabs(f_upper - target) < epsilon:
-            if np.fabs(f_lower - target) < np.fabs(f_upper - target):
-                return lower
-            else:
-                return upper
-        elif np.fabs(f_lower - target) < epsilon:
-            return lower
-        elif np.fabs(f_upper - target) < epsilon:
-            return upper
-        elif f_lower > target:
-            print('lower adjustment bound too high!')
-            return lower
-        elif f_upper < target:
-            print('upper adjustment bound too low!')
-            return upper
-        else:
-            assert(f_lower < target and target < f_upper)
-
-        #now we're ready for binary search!
-        for _ in range(maxiter):
-            midpoint = (lower + upper) / 2
-            f_mid = compute_avg_pseudolabel_prob(midpoint)
-            if np.fabs(f_mid - target) < epsilon:
-                return midpoint
-            if f_mid > target:
-                upper = midpoint
-            else:
-                lower = midpoint
-
-        #maxed out our iters
-        print('adjustment bsearch maxed out iters')
-        return (lower + upper) / 2
 
     #get text embeddings for initializing the pseudolabels
     #this would be the place to do ensembling
@@ -680,41 +594,11 @@ class Caption_tri_wta_soft_pseudolabel_learnedensemble(TrainerX):
     def get_initializing_text_embeddings(self):
         templates = FIXED_PROMPTS_DICT[self.cfg.TRAIN.PSEUDOLABEL_INIT_PROMPT_KEY]
         classnames = self.dm.dataset.classnames
-        classname_lists = self.classname_lists
-        ensemble_size = len(classname_lists[0])
-        texts = [[template.format(name) for name, template in itertools.product(name_list, templates)] for name_list in classname_lists]
-        texts = [clip.tokenize(texts_sub) for texts_sub in texts]
-        with torch.no_grad():
-            texts = torch.cat(texts).to(self.device)
-            fixed_text_embeddings = []
-            cur_t = 0
-            chunk_size = 6400
-            while cur_t < texts.shape[0]:
-                texts_chunk = texts[cur_t:min(cur_t+chunk_size, texts.shape[0])]
-                if self.cfg.COMPUTE_ZSCLIP:
-                    fixed_text_embeddings_chunk = self.clip_model.encode_text(texts_chunk)
-                else:
-                    fixed_text_embeddings_chunk = self.model.model.encode_text(texts_chunk)
-
-                fixed_text_embeddings.append(fixed_text_embeddings_chunk)
-                cur_t += chunk_size
-
-            fixed_text_embeddings = torch.cat(fixed_text_embeddings)
-            fixed_text_embeddings = torch.reshape(fixed_text_embeddings, (len(classnames), ensemble_size * len(templates), -1))
-            fixed_text_embeddings = fixed_text_embeddings / fixed_text_embeddings.norm(dim=-1, keepdim=True)
-            fixed_text_embeddings = torch.mean(fixed_text_embeddings, dim=1)
-            fixed_text_embeddings = fixed_text_embeddings / fixed_text_embeddings.norm(dim=-1, keepdim=True)
-            return fixed_text_embeddings
-
-    def get_initializing_text_embeddings_orig_classnames_only(self):
-        templates = FIXED_PROMPTS_DICT[self.cfg.TRAIN.PSEUDOLABEL_INIT_PROMPT_KEY]
-        classnames = self.dm.dataset.classnames
         texts = [[template.format(classname) for template in templates] for classname in classnames]
         texts = [clip.tokenize(texts_sub) for texts_sub in texts]
         with torch.no_grad():
             texts = torch.cat(texts).to(self.device)
             if self.cfg.COMPUTE_ZSCLIP:
-                assert(False) #shouldn't be calling this function for COMPUTE_ZSCLIP mode
                 fixed_text_embeddings = self.clip_model.encode_text(texts)
             else:
                 fixed_text_embeddings = self.model.model.encode_text(texts)
@@ -725,18 +609,11 @@ class Caption_tri_wta_soft_pseudolabel_learnedensemble(TrainerX):
             fixed_text_embeddings = fixed_text_embeddings / fixed_text_embeddings.norm(dim=-1, keepdim=True)
             return fixed_text_embeddings
 
-    def initialize_pseudolabels_global_only(self):
-        print('initialize_pseudolabels_global_only...')
+    def initialize_pseudolabels_top1_positive(self):
+        #do initialization (set self.init_pseudolabel_probs)
         num_samples = len(self.dm.dataset.train_x)
-        self.pseudolabel_logits = torch.zeros((num_samples, len(self.dm.dataset.classnames)), dtype=self.model.dtype, device=self.device)
-        self.pseudolabel_weights = torch.ones_like(self.pseudolabel_logits)
-
-        if self.cfg.TRAIN.INIT_WITH_ORIG_CLASSNAMES_ONLY:
-            text_embeddings = self.get_initializing_text_embeddings_orig_classnames_only()
-        else:
-            text_embeddings = self.get_initializing_text_embeddings()
-
-        passed_logit_check = False
+        self.init_pseudolabel_probs = torch.zeros((num_samples,len(self.dm.dataset.classnames)),dtype=self.model.dtype,device=self.device)
+        text_embeddings = self.get_initializing_text_embeddings()
         for batch in tqdm(self.dm.train_loader_x_complete):
             images = batch['img'].to(self.device)
             idx = batch['idx'].to(self.device)
@@ -744,104 +621,94 @@ class Caption_tri_wta_soft_pseudolabel_learnedensemble(TrainerX):
             assert(len(image_embeddings.shape) == 2)
             assert(image_embeddings.shape[0] == images.shape[0])
             image_embeddings = image_embeddings / image_embeddings.norm(dim=-1, keepdim=True)
-            softlogits = self.model.model.logit_scale.exp() * image_embeddings @ text_embeddings.t()
-            siglogits = softlogits2siglogits(softlogits)
-            if not passed_logit_check:
-                diff = torch.max(torch.abs(torch.sigmoid(siglogits) - torch.softmax(softlogits, dim=1))).item()
-                print('softlogits vs siglogits ==> probs diff at most %s'%(str(diff)))
-                assert(diff < 1e-6)
-                passed_logit_check = True
+            scores = image_embeddings @ text_embeddings.t()
+            winners = torch.argmax(scores, dim=1)
+            self.init_pseudolabel_probs[idx, winners] = 1.0
 
-            self.pseudolabel_logits[idx,:] = siglogits
+        #do observation (set self.observed_mask)
+        if self.cfg.TRAIN.PSEUDOLABEL_OBSERVATION_METHOD == 'observe_positives':
+            self.observed_mask = self.init_pseudolabel_probs.detach().clone()
+        elif self.cfg.TRAIN.PSEUDOLABEL_OBSERVATION_METHOD == 'observe_nothing':
+            self.observed_mask = torch.zeros_like(self.init_pseudolabel_probs)
+        else:
+            assert(False)
+
+        #weights and bookkeeping
+        self.pseudolabel_weights = torch.ones_like(self.init_pseudolabel_probs)
+        self.pseudolabel_probs = self.init_pseudolabel_probs.detach().clone()
 
     #should call this before any training
     def initialize_pseudolabels(self):
         print('initialize_pseudolabels...')
         print(self.device)
         with torch.no_grad(): #NOTE: if your initialization method requires gradients, you'll have to modify this
-            if self.cfg.TRAIN.PSEUDOLABEL_INIT_METHOD == 'global_only':
-                self.initialize_pseudolabels_global_only()
+            if self.cfg.TRAIN.PSEUDOLABEL_INIT_METHOD == 'top1_positive':
+                self.initialize_pseudolabels_top1_positive()
             else:
                 assert(False)
 
-            if self.cfg.TRAIN.DO_ADJUST_LOGITS:
-                self.adjust_pseudolabel_logits()
-
         self.save_pseudolabels(None, self.output_dir, is_init=True)
 
-    #should call this after every K epochs, for some K
-    #(we can reconsider later whether it should be for every step...)
-    def update_pseudolabels(self):
-        print('update_pseudolabels...')
-        assert(self.cfg.TRAIN.PSEUDOLABEL_UPDATE_MODE == 'gaussian_grad')
+    def should_freeze_pseudolabels(self):
+        #special case where they should always be frozen
+        if self.cfg.TRAIN.MAX_EPOCH_FOR_DELTA_REL == 0 or self.cfg.TRAIN.DELTA_REL == 0.0:
+            assert(self.cfg.TRAIN.MAX_EPOCH_FOR_DELTA_REL == 0 and self.cfg.TRAIN.DELTA_REL == 0.0)
+            return True
 
-        for batch in tqdm(self.dm.train_loader_x_complete):
+        return self.epoch < self.cfg.TRAIN.PSEUDOLABEL_FREEZE_DURATION
 
-            #get grad
-            images = batch['img'].to(self.device)
-            with torch.no_grad():
-                output, _, _ = self.model(images)
-                pred_probs = torch.sigmoid(output)
+    #NOTE: This will have side effects!
+    #output should be logits
+    #This will update self.pseudolabel_probs (which is just for bookkeeping at this point)
+    #and self.pseudolabel_weights (which is always 1 at this point but could be for bookkeeping later)
+    def compute_loss_LargeLossTemp(self, idx, output):
+        #get loss_matrix and corrected_loss_matrix
+        #labels should be equal to init_pseudolabel_probs (trust me, just think of init_pseudolabel_probs as the "assumed" labels)
+        #then just 1 - labels to get corrected_loss_matrix
+        #it's okay to flip observed losses, they'll get zeroed out before being used to select the topK losses
+        #(when you put ones in self.observed_mask, you're doing that zeroing-out)
+        labels = self.init_pseudolabel_probs[idx,:]
+        loss_matrix = F.binary_cross_entropy_with_logits(output, labels, reduction='none')
+        corrected_loss_matrix = F.binary_cross_entropy_with_logits(output, 1 - labels, reduction='none')
 
-            idx = batch['idx'].to(self.device)
-            pseudolabel_logits = self.pseudolabel_logits[idx,:]
-            pseudolabel_logits.requires_grad_(True)
-            if pseudolabel_logits.grad is not None:
-                pseudolabel_logits.grad.zero_()
-            bce_loss = torch.sum(F.binary_cross_entropy_with_logits(pseudolabel_logits, pred_probs, reduction='none'))
-            bce_loss.backward()
-            pseudolabel_logits_grad = pseudolabel_logits.grad
+        #decide whether to freeze pseudolabels
+        if self.should_freeze_pseudolabels():
+            self.pseudolabel_probs[idx,:] = self.init_pseudolabel_probs[idx,:]
+            return torch.mean(torch.sum(self.pseudolabel_weights[idx,:] * loss_matrix, dim=-1))
 
-            with torch.no_grad():
-                #get gaussian
-                pseudolabel_probs = torch.sigmoid(pseudolabel_logits)
-                bandwidth = self.cfg.TRAIN.PSEUDOLABEL_UPDATE_GAUSSIAN_BANDWIDTH
-                pseudolabel_gaussians = 1.0 / (np.sqrt(2 * np.pi) * bandwidth) * torch.exp(-0.5 * torch.square(pseudolabel_probs - 0.5) / (bandwidth**2))
+        #figure out threshold
+        #you should use something like (delta_rel=0.2, max_epoch_for_delta_rel=9)
+        #OR, (delta_rel=0.04, max_epoch_for_delta_rel=49)
+        top_prop = min(self.epoch, self.cfg.TRAIN.MAX_EPOCH_FOR_DELTA_REL) * self.cfg.TRAIN.DELTA_REL / 100.0
+        k = math.ceil(top_prop * output.shape[0] * output.shape[1])
+        unobserved_loss = loss_matrix * (1 - self.observed_mask[idx,:])
+        topk = torch.topk(unobserved_loss.flatten(), k)
+        topk_lossvalue = topk.values[-1]
 
-                #do the update
-                stepsize = self.cfg.TRAIN.PSEUDOLABEL_UPDATE_STEPSIZE
-                self.pseudolabel_logits[idx,:] = self.pseudolabel_logits[idx,:] - stepsize*pseudolabel_gaussians*pseudolabel_logits_grad
-
-    #output, pseudolabel_logits both have shape (batch_size, num_classes)
-    #will return something with that same shape
-    def compute_individual_losses(self, output, pseudolabel_logits):
-        if self.cfg.TRAIN.LOSSFUNC == 'crossent':
-            pseudolabel_probs = torch.sigmoid(pseudolabel_logits)
-            return F.binary_cross_entropy_with_logits(output, pseudolabel_probs, reduction='none')
-        elif self.cfg.TRAIN.LOSSFUNC == 'ASL':
-            pseudolabel_probs = torch.sigmoid(pseudolabel_logits)
-            pos_losses = AsymmetricLoss_softmax_partial_fn(1)(output)
-            neg_losses = AsymmetricLoss_softmax_partial_fn(-1)(output)
-            return pseudolabel_probs * pos_losses + (1 - pseudolabel_probs) * neg_losses
-        else:
-            assert(False)
-
-    #output, pseudolabel_logits, pseudolabel_weights all have shape (batch_size, num_classes)
-    #will return a single scalar
-    def compute_loss(self, output, pseudolabel_logits, pseudolabel_weights):
-        assert(len(output.shape) == 2)
-        assert(output.shape == pseudolabel_logits.shape)
-        assert(output.shape == pseudolabel_weights.shape)
-        individual_losses = self.compute_individual_losses(output, pseudolabel_logits)
-        loss = torch.mean(torch.sum(pseudolabel_weights * individual_losses, dim=-1))
+        #apply threshold to flip some of the unobserved labels
+        final_loss_matrix = torch.where(unobserved_loss < topk_lossvalue, loss_matrix, corrected_loss_matrix)
+        loss = torch.mean(torch.sum(self.pseudolabel_weights[idx,:] * loss_matrix, dim=-1))
+        pseudolabel_probs = torch.where(unobserved_loss < topk_lossvalue, labels, 1 - labels)
+        self.pseudolabel_probs[idx,:] = pseudolabel_probs
         return loss
 
     def forward_backward(self, batch):
-        image, pseudolabel_logits, pseudolabel_weights = self.parse_batch_train(batch)
+        image, idx = self.parse_batch_train(batch)
 
         prec = self.cfg.TRAINER.Caption.PREC
         if prec == "amp":
             assert(False) #this doesn't support multilabel loss
             with autocast():
-                output, _, _ = self.model(image)
+                output_g, output, _, _ = self.model(image)
                 loss = F.cross_entropy(output, label)
             self.optim.zero_grad()
             self.scaler.scale(loss).backward()
             self.scaler.step(self.optim)
             self.scaler.update()
         else:
-            output, _, _ = self.model(image)
-            loss = self.compute_loss(output, pseudolabel_logits, pseudolabel_weights)
+            output_g, output, _, _ = self.model(image)
+            assert(self.cfg.TRAIN.PSEUDOLABEL_UPDATE_MODE == 'LargeLossTemp')
+            loss = self.compute_loss_LargeLossTemp(idx, output)
             self.model_backward_and_update(loss)
 
         loss_summary = {
@@ -854,19 +721,14 @@ class Caption_tri_wta_soft_pseudolabel_learnedensemble(TrainerX):
 
         return loss_summary
 
-    #return input, pseudolabel_logits, pseudolabel_weights
-    #pseudolabel_logits will produce probabilities when plugged into a sigmoid (without any temperature)
-    #up to you to decide how those probabilities are used
-    #pseudolabel_weights will be between 0 and 1 and should indicate how much the loss from each pseudolabel gets counted
-    #you could make it completely binary if you want to just include or exclude pseudolabels
+    #return input, idx
     #note that we do NOT look at ground-truth labels!
     def parse_batch_train(self, batch):
         input = batch["img"]
         input = input.to(self.device)
         idx = batch["idx"]
-        pseudolabel_logits = self.pseudolabel_logits[idx,:]
-        pseudolabel_weights = self.pseudolabel_weights[idx,:]
-        return input, pseudolabel_logits, pseudolabel_weights
+        idx = idx.to(self.device)
+        return input, idx
 
     def load_model(self, directory, epoch=None):
         if not directory:

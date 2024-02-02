@@ -1,0 +1,10 @@
+name: 'synonyms8_betterPolysemy_appendOrigClassname'
+is_two_stage: 1
+two_stage:
+    first_prompt_template: 'Please list up to {num_to_generate:d} noun meanings of the object "{classname}"'
+    first_num_to_generate: 3
+    total_num_to_generate: 8
+    second_prompt_template: 'Please list {num_to_generate:d} noun synonyms of the object "{classname}" as in "{primary_output}"'
+    second_min_num_per_primary: 8
+    include_orig_classname: 1
+    output_template: '{classname}, also known as a {output}'

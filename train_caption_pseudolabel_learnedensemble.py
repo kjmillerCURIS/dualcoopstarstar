@@ -26,7 +26,7 @@ import trainers.zsclip
 #import trainers.Caption_tri_wta
 #import trainers.Caption_tri_wta_soft
 #import trainers.Caption_tri_wta_soft_ada
-import trainers.Caption_tri_wta_soft_pseudolabel
+import trainers.Caption_tri_wta_soft_pseudolabel_learnedensemble
 
 
 def print_args(args, cfg):
@@ -122,10 +122,15 @@ def extend_cfg(cfg):
     cfg.TRAIN.PSEUDOLABEL_UPDATE_FREQ = 1
     cfg.TRAIN.LOSSFUNC = 'crossent'
 
+    #llm stuff
+    cfg.llm_name = ''
+    cfg.TRAINER.Caption.THREE_SEPARATE_ENSEMBLES = 0
+    cfg.TRAIN.INIT_WITH_ORIG_CLASSNAMES_ONLY = 1
+
     cfg.TEST.EVALUATOR = 'MLClassificationDualCoOpStarStar'
     cfg.TEST.EVALUATOR_ACT = 'default'
     cfg.TEST.SAVE_PREDS = ""
-    
+
     # several param for spacific transform setting
     cfg.INPUT.random_resized_crop_scale = (0.8, 1.0)
     cfg.INPUT.cutout_proportion = 0.4
@@ -136,7 +141,6 @@ def extend_cfg(cfg):
     #special flags 'n stuff
     cfg.COMPUTE_RANDOM_CHANCE = 0
     cfg.COMPUTE_ZSCLIP = 0
-    cfg.ZSCLIP_USE_COSSIM = 0
     cfg.EVAL_TRAINING_PSEUDOLABELS = 0
 
 

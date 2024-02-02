@@ -490,8 +490,11 @@ class Caption_tri_wta_soft_pseudolabel(TrainerX):
                 assert(len(image_embeddings.shape) == 2)
                 assert(image_embeddings.shape[0] == input.shape[0])
                 image_embeddings = image_embeddings / image_embeddings.norm(dim=-1, keepdim=True)
-                softlogits = self.clip_model.logit_scale.exp() * image_embeddings @ text_embeddings.t()
-                logits = softlogits2siglogits(softlogits)
+                if self.cfg.ZSCLIP_USE_COSSIM:
+                    logits = image_embeddings @ text_embeddings.t()
+                else:
+                    softlogits = self.clip_model.logit_scale.exp() * image_embeddings @ text_embeddings.t()
+                    logits = softlogits2siglogits(softlogits)
             else:
                 _, logits, _, _ = self.model_inference(input)
 

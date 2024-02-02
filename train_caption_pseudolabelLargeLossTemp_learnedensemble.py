@@ -26,7 +26,7 @@ import trainers.zsclip
 #import trainers.Caption_tri_wta
 #import trainers.Caption_tri_wta_soft
 #import trainers.Caption_tri_wta_soft_ada
-import trainers.Caption_tri_wta_soft_pseudolabel
+import trainers.Caption_tri_wta_soft_pseudolabelLargeLossTemp_learnedensemble
 
 
 def print_args(args, cfg):
@@ -108,24 +108,23 @@ def extend_cfg(cfg):
     cfg.TRAIN.IF_ablation = False
     cfg.TRAIN.Caption_num = 0
 
-    cfg.TRAIN.PSEUDOLABEL_INIT_METHOD = 'global_only'
     cfg.TRAIN.PSEUDOLABEL_INIT_PROMPT_KEY = 'ensemble_80'
-    cfg.TRAIN.DO_ADJUST_LOGITS = 0
-    cfg.TRAIN.ADJUST_LOGITS_MIN_BIAS = -2.0
-    cfg.TRAIN.ADJUST_LOGITS_MAX_BIAS = 5.0
-    cfg.TRAIN.ADJUST_LOGITS_TARGET = 2.89
-    cfg.TRAIN.ADJUST_LOGITS_EPSILON = 0.05
-    cfg.TRAIN.ADJUST_LOGITS_MAXITER = 10
-    cfg.TRAIN.PSEUDOLABEL_UPDATE_MODE = 'gaussian_grad'
-    cfg.TRAIN.PSEUDOLABEL_UPDATE_GAUSSIAN_BANDWIDTH = 0.2 #options will be 0.1, 0.2, 0.4
-    cfg.TRAIN.PSEUDOLABEL_UPDATE_STEPSIZE = 0.25 #options will be 0.0625, 0.125, 0.25, 0.5, 1.0
-    cfg.TRAIN.PSEUDOLABEL_UPDATE_FREQ = 1
-    cfg.TRAIN.LOSSFUNC = 'crossent'
+    cfg.TRAIN.PSEUDOLABEL_INIT_METHOD = 'top1_positive'
+    cfg.TRAIN.PSEUDOLABEL_UPDATE_MODE = 'LargeLossTemp'
+    cfg.TRAIN.PSEUDOLABEL_FREEZE_DURATION = 1
+    cfg.TRAIN.PSEUDOLABEL_OBSERVATION_METHOD = 'observe_nothing' #or could be 'observe_positives'
+    cfg.TRAIN.DELTA_REL = 0.04 #or could be 0.2 paired with max_epoch=9
+    cfg.TRAIN.MAX_EPOCH_FOR_DELTA_REL = 49 #or could be 9 paired with delta_rel=0.2
+
+    #llm stuff
+    cfg.llm_name = ''
+    cfg.TRAINER.Caption.THREE_SEPARATE_ENSEMBLES = 0
+    cfg.TRAIN.INIT_WITH_ORIG_CLASSNAMES_ONLY = 1
 
     cfg.TEST.EVALUATOR = 'MLClassificationDualCoOpStarStar'
     cfg.TEST.EVALUATOR_ACT = 'default'
     cfg.TEST.SAVE_PREDS = ""
-    
+
     # several param for spacific transform setting
     cfg.INPUT.random_resized_crop_scale = (0.8, 1.0)
     cfg.INPUT.cutout_proportion = 0.4
@@ -136,7 +135,6 @@ def extend_cfg(cfg):
     #special flags 'n stuff
     cfg.COMPUTE_RANDOM_CHANCE = 0
     cfg.COMPUTE_ZSCLIP = 0
-    cfg.ZSCLIP_USE_COSSIM = 0
     cfg.EVAL_TRAINING_PSEUDOLABELS = 0
 
 
@@ -259,7 +257,7 @@ if __name__ == "__main__":
         "--no-train", action="store_true", help="do not call trainer.train()"
     )
     parser.add_argument('--compute-random-chance', action='store_true', help='give (uniform) random logits, see how they perform')
-    parser.add_argument('--compute-zsclip', action='store_true', help='see how zsclip performs (using whatever fixed prompt or prompts would have been used for pseudolabel initialization. Note that no logit adjustment happens, and only global clip is used.)')
+    parser.add_argument('--compute-zsclip', action='store_true', help='see how zsclip performs (using the actual siglogits)')
     parser.add_argument('--eval-training-pseudolabels', action='store_true', help='evaluate training pseudolabel accuracy')
     parser.add_argument(
         "opts",

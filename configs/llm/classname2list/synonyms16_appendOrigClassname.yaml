@@ -1,0 +1,7 @@
+name: 'synonyms16_appendOrigClassname'
+is_two_stage: 0
+one_stage:
+    prompt_template: 'Please list {num_to_generate:d} noun synonyms of the object "{classname}"'
+    num_to_generate: 16
+    include_orig_classname: 1
+    output_template: '{classname}, also known as a {output}'
