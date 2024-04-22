@@ -31,7 +31,7 @@ class nuswide_partial(DatasetBase):
         cls_num = 81
     
         root = os.path.abspath(os.path.expanduser(cfg.DATASET.ROOT)) 
-        self.dataset_dir = '/projectnb/ivc-ml/pinghu/dataset/nus_wide/' #os.path.join(root, self.dataset_dir)
+        self.dataset_dir = os.path.join(root, self.dataset_dir)
         self.image_dir = os.path.join(self.dataset_dir, "images")
         self.cls_name_list = self.read_name_list(join(self.dataset_dir, 'Concepts81.txt'), False)
         self.im_name_list = self.read_name_list(join(self.dataset_dir, 'TrainImagelist_filtered.txt'), False)
@@ -101,7 +101,11 @@ class nuswide_partial(DatasetBase):
             item_ = Datum(impath=self.image_dir + '/' + '/'.join(name.split('\\')), label=test_labels[i], classname='')
             test.append(item_)
 
-        super().__init__(train_x=train, val=test[0::60], test=test, \
+        #super().__init__(train_x=train, val=test[0::60], test=test, \
+        #    num_classes=len(object_categories), classnames=object_categories, \
+        #    lab2cname={idx: classname for idx, classname in enumerate(object_categories)})
+        
+        super().__init__(train_x=train, val=test, test=test, \
             num_classes=len(object_categories), classnames=object_categories, \
             lab2cname={idx: classname for idx, classname in enumerate(object_categories)})
 

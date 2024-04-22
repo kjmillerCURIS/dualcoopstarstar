@@ -1,3 +1,3 @@
-PART1 = 'sk-6Xy2fslaEzBsg4blOIWdT3B'
-PART2 = 'lbkFJvtXmJzuzhVoZ5zTBEVCA'
+PART1 = 'sk-INWpgZMmmr9abnUNNOk0T3Blbk'
+PART2 = 'FJvnNBYmja1TD6PnlJgL6T'
 OPENAI_API_KEY = PART1 + PART2

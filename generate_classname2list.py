@@ -6,38 +6,50 @@ import random
 from yacs.config import CfgNode as CN
 from openai import OpenAI
 from openai_utils import OPENAI_API_KEY
-from datasets.data_helpers import coco_object_categories #will import more later with more datasets
-DATASET_NAME_TO_CLASSNAMES = {'COCO2014_partial' : coco_object_categories} #will add more entries later with more datasets
+from datasets.data_helpers import coco_object_categories, nuswide_object_categories, voc_object_categories #will import more later with more datasets
+DATASET_NAME_TO_CLASSNAMES = {'COCO2014_partial' : coco_object_categories, 'nuswide_partial' : nuswide_object_categories, 'VOC2007_partial' : voc_object_categories} #will add more entries later with more datasets
 
 
-DEBUG = False
-DEBUG_NUM_CLASSES = 5
 VERBOSE = True
 OUT_BASE = '../vislang-domain-exploration-data/dualcoopstarstar-data/llm_generations/classname2list'
+LLM_CACHE_FILENAME = os.path.join(OUT_BASE, 'llm_cache_gpt-3.5-turbo-instruct.pkl')
+LLM_MODEL = 'gpt-3.5-turbo-instruct'
 LLM_LIMIT = 20
+DEFAULT_MAX_TOKENS = 300
 
 
 #can generate anything that maps classname ==> classname_list
 
 
-def query_llm(prompts):
-    client = OpenAI(api_key=OPENAI_API_KEY)
-    if DEBUG:
-        print('prompts:')
-        print(prompts)
+def query_llm_helper(client, prompts, max_tokens=DEFAULT_MAX_TOKENS, temperature=0., llm_cache=None):
+    if llm_cache is not None and all([(prompt, max_tokens, temperature) in llm_cache for prompt in prompts]):
+        return [llm_cache[(prompt, max_tokens, temperature)] for prompt in prompts]
 
+    print('ACTUAL LLM QUERY (not cache)')
+    completion = client.completions.create(model=LLM_MODEL, prompt=prompts, temperature=temperature, max_tokens=max_tokens)
+    outputs = [c.text for c in completion.choices]
+
+    if llm_cache is not None:
+        for prompt, output in zip(prompts, outputs):
+            llm_cache[(prompt, max_tokens, temperature)] = output
+
+    return outputs
+
+def query_llm(prompts, max_tokens=DEFAULT_MAX_TOKENS, temperature=0., llm_cache=None):
+    client = OpenAI(api_key=OPENAI_API_KEY)
     print('querying LLM...')
     print('(%d prompts)'%(len(prompts)))
     if len(prompts) <= LLM_LIMIT:
-        completion = client.completions.create(model='text-davinci-003', prompt=prompts, temperature=0., max_tokens=300)
-        outputs = [c.text for c in completion.choices]
+        return query_llm_helper(client, prompts, max_tokens=max_tokens, temperature=temperature, llm_cache=llm_cache)
     else:
         cur_t = 0
         outputs = []
-        while cur_t < len(prompts):
+        for _ in range(int(round(len(prompts) / LLM_LIMIT)) + 10):
+            if cur_t >= len(prompts):
+                break
+
             cur_prompts = prompts[cur_t:min(cur_t+LLM_LIMIT,len(prompts))]
-            completion = client.completions.create(model='text-davinci-003', prompt=cur_prompts, temperature=0., max_tokens=300)
-            cur_outputs = [c.text for c in completion.choices]
+            cur_outputs = query_llm_helper(client, cur_prompts, max_tokens=max_tokens, temperature=temperature, llm_cache=llm_cache)
             outputs.extend(cur_outputs)
             cur_t += LLM_LIMIT
 
@@ -252,19 +264,19 @@ def make_prompt_two_stage_second(classname, primary_output, num_to_generate, llm
     return prompt
 
 
-def one_stage_workflow(classnames, llm_cfg):
+def one_stage_workflow(classnames, llm_cfg, llm_cache=None):
     assert(not llm_cfg.is_two_stage)
     prompts = [make_prompt_one_stage(classname, classnames, llm_cfg) for classname in classnames]
-    outputs = query_llm(prompts)
+    outputs = query_llm(prompts, llm_cache=llm_cache)
     classname_lists = [postprocess_one_stage(output, classname, llm_cfg) for output, classname in zip(outputs, classnames)]
     classname2list = {classname : classname_list for classname, classname_list in zip(classnames, classname_lists)}
     return classname2list
 
 
-def two_stage_workflow(classnames, llm_cfg):
+def two_stage_workflow(classnames, llm_cfg, llm_cache=None):
     assert(llm_cfg.is_two_stage)
     first_stage_prompts = [make_prompt_two_stage_first(classname, classnames, llm_cfg) for classname in classnames]
-    first_stage_outputs = query_llm(first_stage_prompts)
+    first_stage_outputs = query_llm(first_stage_prompts, llm_cache=llm_cache)
     first_stage_outputs_list = [postprocess_two_stage_first(output, llm_cfg) for output in first_stage_outputs]
     classname2indices = {}
     all_second_stage_prompts = []
@@ -280,7 +292,7 @@ def two_stage_workflow(classnames, llm_cfg):
             classname2indices[classname].append(idx)
             all_second_stage_prompts.append(prompt)
 
-    all_second_stage_outputs = query_llm(all_second_stage_prompts)
+    all_second_stage_outputs = query_llm(all_second_stage_prompts, llm_cache=llm_cache)
     classname2list = {}
     for classname in classnames:
         second_stage_outputs = [all_second_stage_outputs[idx] for idx in classname2indices[classname]]
@@ -298,18 +310,18 @@ def generate_classname2list(llm_cfg_filename, dataset_cfg_filename):
     out_filename = get_out_filename(llm_cfg, dataset_cfg)
     classnames = get_classnames(dataset_cfg)
 
-    #yes, this means that other_classnames would get impacted by this
-    if DEBUG:
-        classnames = random.sample(classnames, DEBUG_NUM_CLASSES)
+    llm_cache = {}
+    if os.path.exists(LLM_CACHE_FILENAME):
+        with open(LLM_CACHE_FILENAME, 'rb') as f:
+            llm_cache = pickle.load(f)
 
     if llm_cfg.is_two_stage:
-        classname2list = two_stage_workflow(classnames, llm_cfg)
+        classname2list = two_stage_workflow(classnames, llm_cfg, llm_cache=llm_cache)
     else:
-        classname2list = one_stage_workflow(classnames, llm_cfg)
+        classname2list = one_stage_workflow(classnames, llm_cfg, llm_cache=llm_cache)
 
-    if DEBUG:
-        import pdb
-        pdb.set_trace()
+    with open(LLM_CACHE_FILENAME, 'wb') as f:
+        pickle.dump(llm_cache, f)
 
     with open(out_filename, 'wb') as f:
         pickle.dump(classname2list, f)

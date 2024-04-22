@@ -27,6 +27,9 @@ classname_synonyms = nuswide_classname_synonyms
 @DATASET_REGISTRY.register()
 class nuswide_partial2(DatasetBase):
     def __init__(self, cfg):
+
+        assert(False) #we don't want to use this one
+
         self.dataset_dir = 'nus_wide'
         cls_num = 81
     

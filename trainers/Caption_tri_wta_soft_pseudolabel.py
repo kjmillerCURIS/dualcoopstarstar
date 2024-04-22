@@ -579,6 +579,10 @@ class Caption_tri_wta_soft_pseudolabel(TrainerX):
     def after_epoch(self):
         super().after_epoch()
         if (self.epoch + 1) > 0 and (self.epoch + 1) % self.cfg.TRAIN.PSEUDOLABEL_UPDATE_FREQ == 0:
+            if self.cfg.TRAIN.SKIP_PSEUDOLABEL_UPDATE_IN_CODE:
+                assert(self.cfg.TRAIN.PSEUDOLABEL_UPDATE_STEPSIZE == 0.0)
+                return
+
             self.update_pseudolabels()
             self.save_pseudolabels(self.epoch, self.output_dir)
 

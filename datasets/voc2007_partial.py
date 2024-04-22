@@ -58,19 +58,26 @@ class VOC2007_partial(DatasetBase):
 
         caption_feat_root = os.getcwd()
         partial_prob = cfg.DATASET.partial_prob
-        print('Loading', 'partial/VOC2007/partial-labels/train_proportion_{}.txt'.format(partial_prob))
-        
-        train_labels = read_labels(join(caption_feat_root, 'partial/VOC2007/partial-labels/train_proportion_{}.txt'.format(partial_prob)))
+
+        if partial_prob in [0.0, 1.0]:
+            print('Loading', 'partial/VOC2007/original-labels/train.txt')
+            train_labels = read_labels(join(caption_feat_root, 'partial/VOC2007/original-labels/train.txt'))
+            if partial_prob == 0.0:
+                train_labels = [torch.zeros_like(y) for y in train_labels]
+        else:
+            print('Loading', 'partial/VOC2007/partial-labels/train_proportion_{}.txt'.format(partial_prob))
+            train_labels = read_labels(join(caption_feat_root, 'partial/VOC2007/partial-labels/train_proportion_{}.txt'.format(partial_prob)))
+
         test_labels = read_labels(join(caption_feat_root, 'partial/VOC2007/partial-labels/val.txt'))
         
         train = []
         for i, name in enumerate(self.im_name_list):
-            item_ = Datum(impath=self.image_dir+'/{}.jpg'.format(name), label=train_labels[i], classname='')
+            item_ = Datum(impath=self.image_dir+'/{}.jpg'.format(name), label=train_labels[i].numpy(), classname='')
             train.append(item_)
 
         test = []
         for i, name in enumerate(self.im_name_list_val):
-            item_ = Datum(impath=self.image_dir+'/{}.jpg'.format(name), label=test_labels[i], classname='')
+            item_ = Datum(impath=self.image_dir+'/{}.jpg'.format(name), label=test_labels[i].numpy(), classname='')
             test.append(item_)
     
         super().__init__(train_x=train, val=test, test=test, \

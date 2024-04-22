@@ -120,6 +120,7 @@ def extend_cfg(cfg):
     cfg.TRAIN.PSEUDOLABEL_UPDATE_GAUSSIAN_BANDWIDTH = 0.2 #options will be 0.1, 0.2, 0.4
     cfg.TRAIN.PSEUDOLABEL_UPDATE_STEPSIZE = 0.25 #options will be 0.0625, 0.125, 0.25, 0.5, 1.0
     cfg.TRAIN.PSEUDOLABEL_UPDATE_FREQ = 1
+    cfg.TRAIN.SKIP_PSEUDOLABEL_UPDATE_IN_CODE = 0
     cfg.TRAIN.LOSSFUNC = 'crossent'
 
     #llm stuff
