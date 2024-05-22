@@ -13,8 +13,29 @@ import datasets.voc2007_partial
 sys.path.pop()
 
 
-def compute_mAP(logits, gt_labels):
-    cfg = get_cfg()
+#standalone function
+def average_precision(output, target):
+    epsilon = 1e-8
+
+    # sort examples
+    indices = output.argsort()[::-1]
+    # Computes prec@i
+    total_count_ = np.cumsum(np.ones((len(output), 1)))
+
+    target_ = target[indices]
+    ind = target_ == 1
+    pos_count_ = np.cumsum(ind)
+    total = pos_count_[-1]
+    pos_count_[np.logical_not(ind)] = 0
+    pp = pos_count_ / total_count_
+    precision_at_i_ = np.sum(pp)
+    precision_at_i = precision_at_i_ / (total + epsilon)
+
+    return precision_at_i
+
+
+def compute_mAP(logits, gt_labels, dataset_name):
+    cfg = get_cfg(dataset_name)
     evaluator = build_evaluator(cfg)
     assert(evaluator.is_for_dualcoopstarstar)
     evaluator.reset()
@@ -47,13 +68,18 @@ def get_pseudolabels_as_dict(checkpoint, gt_labels, dataset_name):
     return logits
 
 
+def get_ordered_impaths(dataset_name):
+    dm = get_data_manager(dataset_name)
+    return [item.impath for item in dm.dataset.train_x]
+
+
 def compute_mAP_main(pseudolabels_filename, dataset_name, return_epoch=False):
     with open(TRAINING_GTS_FILENAME_DICT[dataset_name], 'rb') as f:
         gt_labels = pickle.load(f)
 
     checkpoint = torch.load(pseudolabels_filename, map_location='cpu')
     logits = get_pseudolabels_as_dict(checkpoint, gt_labels, dataset_name)
-    mAP = compute_mAP(logits, gt_labels)
+    mAP = compute_mAP(logits, gt_labels, dataset_name)
     print(mAP)
     if return_epoch:
         return mAP, checkpoint['epoch']
