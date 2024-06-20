@@ -4,13 +4,14 @@ import numpy as np
 import pickle
 from tqdm import tqdm
 from yacs.config import CfgNode as CN
+sys.path.append('.')
+sys.path.append('Dassl.pytorch-master')
 from dassl.config import get_cfg_default
 from dassl.data import DataManager
-sys.path.append('.')
 import datasets.coco2014_partial
 import datasets.nuswide_trainset_gt
 import datasets.voc2007_partial
-print(sys.path)
+sys.path.pop()
 sys.path.pop()
 
 

@@ -6,9 +6,10 @@ import pprint
 from tqdm import tqdm
 from harvest_training_gts import TRAINING_GTS_FILENAME_DICT, get_data_manager
 from compute_initial_pseudolabels import PSEUDOLABEL_LOGITS_FILENAME_DICT
+from compute_initial_cossims import PSEUDOLABEL_COSSIMS_FILENAME_DICT
 
 
-#return gts, logits, classnames as 2D arrays
+#return gts, logits, cossims, classnames as 2D arrays
 def load_data(dataset_name):
     with open(TRAINING_GTS_FILENAME_DICT[dataset_name], 'rb') as f:
         gts = pickle.load(f)
@@ -18,9 +19,13 @@ def load_data(dataset_name):
         logits = pickle.load(f)
 
     logits = np.array([logits[impath] for impath in sorted(logits.keys())])
+    with open(PSEUDOLABEL_COSSIMS_FILENAME_DICT[dataset_name], 'rb') as f:
+        cossims = pickle.load(f)
+
+    cossims = np.array([cossims[impath] for impath in sorted(cossims.keys())])
     dm = get_data_manager(dataset_name)
     classnames = dm.dataset.classnames
-    return gts, logits, classnames
+    return gts, logits, cossims, classnames
 
 
 #return margs[i] = np.mean(scores[:,i])
@@ -96,11 +101,12 @@ def triu_flatten(A):
 
 
 #return stats_dict
-def compute_stats(d_metric, d_hat_metric, d_tilde_metric, d_star_metric, b, q, d_hat_metric_sanity, d_tilde_metric_sanity):
+def compute_stats(d_metric, d_hat_metric, d_tilde_metric, d_star_metric, d_star_cossim_metric, b, q, d_hat_metric_sanity, d_tilde_metric_sanity):
     d_metric = triu_flatten(d_metric)
     d_hat_metric = triu_flatten(d_hat_metric)
     d_tilde_metric = triu_flatten(d_tilde_metric)
     d_star_metric = triu_flatten(d_star_metric)
+    d_star_cossim_metric = triu_flatten(d_star_cossim_metric)
     b = triu_flatten(b)
     q = triu_flatten(q)
     d_hat_metric_sanity = triu_flatten(d_hat_metric_sanity)
@@ -113,19 +119,22 @@ def compute_stats(d_metric, d_hat_metric, d_tilde_metric, d_star_metric, b, q, d
     stats_dict['RMSD(d_hat, d)'] = np.sqrt(np.mean(np.square(d_hat_metric, d_metric)))
     stats_dict['RMSD(d_tilde, d)'] = np.sqrt(np.mean(np.square(d_tilde_metric, d_metric)))
     stats_dict['RMSD(d_star, d)'] = np.sqrt(np.mean(np.square(d_star_metric, d_metric)))
+    stats_dict['RMSD(d_star_cossim, d)'] = np.sqrt(np.mean(np.square(d_star_cossim_metric, d_metric)))
     stats_dict['RMSDclamp01(d_hat, d)'] = np.sqrt(np.mean(np.square(np.clip(d_hat_metric, 0, 1), np.clip(d_metric, 0, 1))))
     stats_dict['RMSDclamp01(d_tilde, d)'] = np.sqrt(np.mean(np.square(np.clip(d_tilde_metric, 0, 1), np.clip(d_metric, 0, 1))))
     stats_dict['RMSDclamp01(d_star, d)'] = np.sqrt(np.mean(np.square(np.clip(d_star_metric, 0, 1), np.clip(d_metric, 0, 1))))
+    stats_dict['RMSDclamp01(d_star_cossim, d)'] = np.sqrt(np.mean(np.square(np.clip(d_star_cossim_metric, 0, 1), np.clip(d_metric, 0, 1))))
     stats_dict['RMSDclamp02(d_hat, d)'] = np.sqrt(np.mean(np.square(np.clip(d_hat_metric, 0, 2), np.clip(d_metric, 0, 2))))
     stats_dict['RMSDclamp02(d_tilde, d)'] = np.sqrt(np.mean(np.square(np.clip(d_tilde_metric, 0, 2), np.clip(d_metric, 0, 2))))
     stats_dict['RMSDclamp02(d_star, d)'] = np.sqrt(np.mean(np.square(np.clip(d_star_metric, 0, 2), np.clip(d_metric, 0, 2))))
+    stats_dict['RMSDclamp02(d_star_cossim, d)'] = np.sqrt(np.mean(np.square(np.clip(d_star_cossim_metric, 0, 2), np.clip(d_metric, 0, 2))))
     stats_dict['RMS(b)'] = np.sqrt(np.mean(np.square(b)))
     stats_dict['RMS(q)'] = np.sqrt(np.mean(np.square(q)))
     return stats_dict
 
 
 def do_cooccurrence_metric_analysis(dataset_name):
-    gts, logits, classnames = load_data(dataset_name)
+    gts, logits, cossims, classnames = load_data(dataset_name)
     probs = 1. / (1. + np.exp(-logits))
     d_metric = compute_metric_from_scores(gts)
     d_hat_metric = compute_metric_from_scores(probs)
@@ -136,6 +145,9 @@ def do_cooccurrence_metric_analysis(dataset_name):
     thresholds = np.array([np.quantile(probs[:,i], 1 - gtmargs[i]) for i in range(probs.shape[1])])
     probs_binarized = (probs > thresholds[np.newaxis,:]).astype('int64')
     d_star_metric = compute_metric_from_scores(probs_binarized)
+    cossim_thresholds = np.array([np.quantile(cossims[:,i], 1 - gtmargs[i]) for i in range(cossims.shape[1])])
+    cossims_binarized = (cossims > cossim_thresholds[np.newaxis,:]).astype('int64')
+    d_star_cossim_metric = compute_metric_from_scores(cossims_binarized)
 
     #b and q
     mu_vec = compute_mu_vec(gts, probs)
@@ -148,17 +160,17 @@ def do_cooccurrence_metric_analysis(dataset_name):
     d_tilde_metric_sanity = compute_d_tilde_metric_sanity(gts, q)
 
     #stats_dict
-    stats_dict = compute_stats(d_metric, d_hat_metric, d_tilde_metric, d_star_metric, b, q, d_hat_metric_sanity, d_tilde_metric_sanity)
+    stats_dict = compute_stats(d_metric, d_hat_metric, d_tilde_metric, d_star_metric, d_star_cossim_metric, b, q, d_hat_metric_sanity, d_tilde_metric_sanity)
     print(dataset_name.split('_')[0])
     pprint.pp(stats_dict)
 
     #write stuff
     analysis_filename = os.path.expanduser('~/data/vislang-domain-exploration-data/dualcoopstarstar-data/cooccurrence_correction_experiments/%s_cooccurrence_metric_analysis.csv'%(dataset_name.split('_')[0]))
     f = open(analysis_filename, 'w')
-    f.write('i,j,classnames[i],classnames[j],d_ij,d_hat_ij,d_tilde_ij,d_star_ij,b_ij,q_ij,lambda_i,mu_i,lambda_j,mu_j,d_hat_ij_sanity,d_tild_ij_sanity\n')
+    f.write('i,j,classnames[i],classnames[j],d_ij,d_hat_ij,d_tilde_ij,d_star_ij,d_star_cossim_ij,b_ij,q_ij,lambda_i,mu_i,lambda_j,mu_j,d_hat_ij_sanity,d_tild_ij_sanity\n')
     for i in range(gts.shape[1] - 1):
         for j in range(i + 1, gts.shape[1]):
-            f.write('%d,%d,%s,%s,%f,%f,%f,%f,%f,%f,%f,%f\n'%(i, j, classnames[i], classnames[j], d_metric[i,j], d_hat_metric[i,j], d_tilde_metric[i,j], d_star_metric[i,j], b[i,j], q[i,j], lambda_vec[i], mu_vec[i], lambda_vec[j], mu_vec[j], d_hat_metric_sanity[i,j], d_tilde_metric_sanity[i,j]))
+            f.write('%d,%d,%s,%s,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n'%(i, j, classnames[i], classnames[j], d_metric[i,j], d_hat_metric[i,j], d_tilde_metric[i,j], d_star_metric[i,j], d_star_cossim_metric[i,j], b[i,j], q[i,j], lambda_vec[i], mu_vec[i], lambda_vec[j], mu_vec[j], d_hat_metric_sanity[i,j], d_tilde_metric_sanity[i,j]))
 
     f.close()
 
