@@ -1,6 +1,6 @@
 #!/bin/bash -l
 
-#$ -N TESTINGDUMP_zsclip_ensemble80_nuswide
+#$ -N handprompts_noneg_nuswide
 
 #$ -m bea
 
@@ -43,7 +43,7 @@ cd ~/data/dualcoopstarstar
 
 # custom config
 DATA=~/data/vislang-domain-exploration-data/dualcoopstarstar-data
-TRAINER=Caption_tri_wta_soft_pseudolabel
+TRAINER=Caption_tri_wta_soft_handprompts
 
 DATASET=nuswide_partial
 CFG=rn101_nus  # config file
@@ -54,14 +54,14 @@ MOD=pos200 #yes this is used now
 #run_ID=coco2014_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_norm
 #partial_prob=0.5
 
-run_ID=TESTINGDUMP_zsclip_ensemble80_nuswide
+run_ID=handprompts_noneg_nuswide
 
 #for SEED in 1 3 5
 for SEED in 1
 do
     DIR=${DATA}/output/${run_ID}/${TRAINER}/${CFG}/nctx${NCTX}_csc${CSC}_ctp${CTP}/seed${SEED}
     echo "Run this job and save the output to ${DIR}"
-    python train_caption_pseudolabel.py \
+    python train_caption_handprompts.py \
     --root ${DATA} \
     --seed ${SEED} \
     --trainer ${TRAINER} \
@@ -69,7 +69,7 @@ do
     --config-file configs/trainers/${TRAINER}/${CFG}.yaml \
     --output-dir ${DIR} \
     --mode ${MOD} \
-    --compute-zsclip
+    NONEG 1
 done
 
 # VOC

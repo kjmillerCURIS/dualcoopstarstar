@@ -3,12 +3,14 @@ import sys
 import numpy as np
 import torch
 from torch import nn
+import torch.nn.functional as F
 
 
 class DecoderModel(nn.Module):
 
     #you'll need to compute or load standardization_info externally
     def __init__(self, num_classes, standardization_info, params):
+        super().__init__()
         p = params
         layers = []
         cur_size = num_classes
@@ -31,10 +33,10 @@ class DecoderModel(nn.Module):
         if p['use_final_batchnorm']:
             layers.append(nn.BatchNorm1d(cur_size))
 
-        self.base = nn.Sequential(layers)
+        self.base = nn.Sequential(*layers)
         self.standardize_input = p['standardize_input']
         if self.standardize_input:
-            self.standardization_info = {'means' : torch.tensor(standardization_info['means'], device='cuda'), 'sds' : torch.tensor(standardization_info['sds'], device='cuda')}
+            self.standardization_info = {'means' : standardization_info['means'].clone().detach().cuda(), 'sds' : standardization_info['sds'].clone().detach().cuda()}
             assert(self.standardization_info['means'].shape == (num_classes,))
             assert(self.standardization_info['sds'].shape == (num_classes,))
 

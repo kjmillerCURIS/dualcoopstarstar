@@ -26,6 +26,9 @@ from .fixed_prompt_utils import FIXED_PROMPTS_DICT
 _tokenizer = _Tokenizer()
 
 
+TERNARY_COOCCURRENCE_MAT_DIR = '../vislang-domain-exploration-data/dualcoopstarstar-data/cooccurrence_correction_experiments/ternary_cooccurrence_mats'
+
+
 def load_clip_to_cpu(cfg):
     backbone_name = cfg.MODEL.BACKBONE.NAME
     url = clip._MODELS[backbone_name]
@@ -328,6 +331,13 @@ class DenseCLIP(nn.Module):
         text_features_pos = text_features_pos / text_features_pos.norm(dim=-1, keepdim=True)
         text_features_neg = text_features_neg / text_features_neg.norm(dim=-1, keepdim=True)
 
+        #compute cosine similarities between text embeddings of different classes
+        #they're already normalized, so just have to dot-product
+        #they're shape (num_classes, embed_dim)
+        positive_textemb_pair_cossims = text_features_pos @ text_features_pos.t()
+        negative_textemb_pair_cossims = text_features_neg @ text_features_neg.t()
+        evidentiary_textemb_pair_cossims = text_features @ text_features.t()
+
         logit_scale_pos = self.temperature_pos.exp() 
         logit_scale_neg = self.temperature_neg.exp() 
         logit_scale_wta = self.temperature_wta.exp() 
@@ -402,7 +412,7 @@ class DenseCLIP(nn.Module):
         if self.cfg.TRAINER.Caption.USE_BIAS:
             logits_ = logits_ + self.prompt_learner.bias #keep it in prompt_learner so it'll be learnable
 
-        return logits_g, logits_, image_features, text_features
+        return logits_g, logits_, image_features, text_features, positive_textemb_pair_cossims, negative_textemb_pair_cossims, evidentiary_textemb_pair_cossims
 
         
 def softlogits2siglogits(softlogits):
@@ -420,7 +430,7 @@ def softlogits2siglogits(softlogits):
 
 
 @TRAINER_REGISTRY.register()
-class Caption_tri_wta_soft_pseudolabel(TrainerX):
+class Caption_tri_wta_soft_pseudolabel_ternary_cooccurrence_textangle(TrainerX):
     ''' This inherits from TrainerX, however it will NOT look at the label during train-time! '''
 
     @torch.no_grad()
@@ -481,10 +491,6 @@ class Caption_tri_wta_soft_pseudolabel(TrainerX):
         if self.cfg.COMPUTE_ZSCLIP:
             text_embeddings = self.get_initializing_text_embeddings()
 
-        if self.cfg.COMPUTE_ZSCLIP:
-            cossims_dict = {}
-            logits_dict = {}
-
         for batch_idx, batch in enumerate(tqdm(data_loader)):
             input, label = self.parse_batch_test(batch)
             if self.cfg.COMPUTE_RANDOM_CHANCE:
@@ -494,25 +500,13 @@ class Caption_tri_wta_soft_pseudolabel(TrainerX):
                 assert(len(image_embeddings.shape) == 2)
                 assert(image_embeddings.shape[0] == input.shape[0])
                 image_embeddings = image_embeddings / image_embeddings.norm(dim=-1, keepdim=True)
-                cossims = image_embeddings @ text_embeddings.t()
-                impaths = batch['impath']
-                for k, v in zip(impaths, cossims.cpu().numpy()):
-                    assert(isinstance(k, str))
-                    assert(k not in cossims_dict)
-                    cossims_dict[k] = v
-
                 if self.cfg.ZSCLIP_USE_COSSIM:
-                    logits = cossims
+                    logits = image_embeddings @ text_embeddings.t()
                 else:
-                    softlogits = self.clip_model.logit_scale.exp() * cossims
+                    softlogits = self.clip_model.logit_scale.exp() * image_embeddings @ text_embeddings.t()
                     logits = softlogits2siglogits(softlogits)
-                    for k, v in zip(impaths, logits.cpu().numpy()):
-                        assert(isinstance(k, str))
-                        assert(k not in logits_dict)
-                        logits_dict[k] = v
-
             else:
-                _, logits, _, _ = self.model_inference(input)
+                _, logits, _, _, _, _, _ = self.model_inference(input)
 
             self.evaluator.process({'default' : logits}, label)
 
@@ -527,13 +521,6 @@ class Caption_tri_wta_soft_pseudolabel(TrainerX):
 
         with open(results_filename, 'wb') as f:
             pickle.dump(results, f)
-
-        if self.cfg.COMPUTE_ZSCLIP:
-            with open(os.path.join(results_dir, 'testing_cossims_dict.pkl'), 'wb') as f:
-                pickle.dump(cossims_dict, f)
-
-            with open(os.path.join(results_dir, 'testing_logits_dict.pkl'), 'wb') as f:
-                pickle.dump(logits_dict, f)
 
         for k, v in results.items():
             if k != 'mAP':
@@ -594,6 +581,27 @@ class Caption_tri_wta_soft_pseudolabel(TrainerX):
         if device_count > 1:
             print(f"Multiple GPUs detected (n_gpus={device_count}), use all of them!")
             self.model = nn.DataParallel(self.model)
+
+        self.load_ternary_cooccurrence_mat()
+
+    def load_ternary_cooccurrence_mat(self):
+        ternary_cooccurrence_mat_filename = os.path.join(TERNARY_COOCCURRENCE_MAT_DIR, self.cfg.DATASET.NAME, self.cfg.TRAIN.TERNARY_COOCCURRENCE_MAT_NAME + '.pkl')
+        with open(ternary_cooccurrence_mat_filename, 'rb') as f:
+            ternary_cooccurrence_mat = pickle.load(f)
+
+        assert(ternary_cooccurrence_mat['classnames'] == self.dm.dataset.classnames)
+        ternary_cooccurrence_mat = ternary_cooccurrence_mat['mat']
+        assert(ternary_cooccurrence_mat.shape == (len(self.dm.dataset.classnames), len(self.dm.dataset.classnames)))
+        assert(np.all((ternary_cooccurrence_mat == -1) | (ternary_cooccurrence_mat == 0) | (ternary_cooccurrence_mat == 1)))
+        assert(np.allclose(ternary_cooccurrence_mat, np.triu(ternary_cooccurrence_mat, k=1)))
+        alpha = self.cfg.TRAIN.TERNARY_COOCCURRENCE_ALPHA
+        beta_over_alpha = self.cfg.TRAIN.TERNARY_COOCCURRENCE_BETA_OVER_ALPHA
+        beta = alpha * beta_over_alpha
+        penalize_mask = (ternary_cooccurrence_mat == 1)
+        reward_mask = (ternary_cooccurrence_mat == -1)
+        ternary_cooccurrence_mat[penalize_mask] = alpha
+        ternary_cooccurrence_mat[reward_mask] = -beta
+        self.ternary_cooccurrence_mat = torch.tensor(ternary_cooccurrence_mat, device='cuda')
 
     def before_train(self):
         super().before_train()
@@ -772,49 +780,80 @@ class Caption_tri_wta_soft_pseudolabel(TrainerX):
 
     #output, pseudolabel_logits both have shape (batch_size, num_classes)
     #will return something with that same shape
-    def compute_individual_losses(self, output, pseudolabel_logits):
+    def compute_individual_losses(self, output, pseudolabel_logits, gt_labels=None):
+        if self.cfg.USE_GT_LABELS:
+            assert(gt_labels is not None)
+            assert(torch.all((gt_labels == 1) | (gt_labels == -1)))
+            supervision_probs = torch.clip(gt_labels, min=0)
+        else:
+            assert(gt_labels is None)
+            supervision_probs = torch.sigmoid(pseudolabel_logits)
+
         if self.cfg.TRAIN.LOSSFUNC == 'crossent':
-            pseudolabel_probs = torch.sigmoid(pseudolabel_logits)
-            return F.binary_cross_entropy_with_logits(output, pseudolabel_probs, reduction='none')
+            return F.binary_cross_entropy_with_logits(output, supervision_probs, reduction='none')
         elif self.cfg.TRAIN.LOSSFUNC == 'ASL':
-            pseudolabel_probs = torch.sigmoid(pseudolabel_logits)
             pos_losses = AsymmetricLoss_softmax_partial_fn(1)(output)
             neg_losses = AsymmetricLoss_softmax_partial_fn(-1)(output)
-            return pseudolabel_probs * pos_losses + (1 - pseudolabel_probs) * neg_losses
+            return supervision_probs * pos_losses + (1 - supervision_probs) * neg_losses
         else:
             assert(False)
 
+    #return scalar, which will be added directly to erm_loss (so do any necessary weighting here)
+    def compute_cooccurrence_loss(self, positive_textemb_pair_cossims, negative_textemb_pair_cossims, evidentiary_textemb_pair_cossims):
+        #Note: we assume that self.ternary_cooccurrence_mat has already been multiplied by alpha and beta, so we can just multiply by the outer-product
+        cooccurrence_loss_positive = torch.sum(self.ternary_cooccurrence_mat * torch.triu(positive_textemb_pair_cossims, diagonal=1))
+        cooccurrence_loss_negative = torch.sum(self.ternary_cooccurrence_mat * torch.triu(negative_textemb_pair_cossims, diagonal=1))
+        cooccurrence_loss_evidentiary = torch.sum(self.ternary_cooccurrence_mat * torch.triu(evidentiary_textemb_pair_cossims, diagonal=1))
+        return cooccurrence_loss_positive + cooccurrence_loss_negative + cooccurrence_loss_evidentiary
+
     #output, pseudolabel_logits, pseudolabel_weights all have shape (batch_size, num_classes)
     #will return a single scalar
-    def compute_loss(self, output, pseudolabel_logits, pseudolabel_weights):
+    def compute_loss(self, output, pseudolabel_logits, pseudolabel_weights, positive_textemb_pair_cossims, negative_textemb_pair_cossims, evidentiary_textemb_pair_cossims, gt_labels=None):
         assert(len(output.shape) == 2)
         assert(output.shape == pseudolabel_logits.shape)
         assert(output.shape == pseudolabel_weights.shape)
-        individual_losses = self.compute_individual_losses(output, pseudolabel_logits)
-        loss = torch.mean(torch.sum(pseudolabel_weights * individual_losses, dim=-1))
-        return loss
+        individual_losses = self.compute_individual_losses(output, pseudolabel_logits, gt_labels=gt_labels)
+        if self.cfg.USE_GT_LABELS:
+            assert(gt_labels is not None)
+            supervision_weights = pseudolabel_weights
+        else:
+            assert(gt_labels is None)
+            supervision_weights = torch.ones_like(pseudolabel_weights)
+
+        erm_loss = torch.mean(torch.sum(supervision_weights * individual_losses, dim=-1))
+        if self.epoch < self.cfg.TRAIN.TERNARY_COOCCURRENCE_LOSS_OFF_DURATION:
+            return erm_loss, erm_loss, torch.zeros_like(erm_loss)
+
+        cooccurrence_loss = self.compute_cooccurrence_loss(positive_textemb_pair_cossims, negative_textemb_pair_cossims, evidentiary_textemb_pair_cossims) #cooccurrence_loss will already be weighted by alpha and beta
+        loss = erm_loss + cooccurrence_loss
+        return loss, erm_loss, cooccurrence_loss
 
     def forward_backward(self, batch):
-        image, pseudolabel_logits, pseudolabel_weights = self.parse_batch_train(batch)
+        gt_labels = None
+        if self.cfg.USE_GT_LABELS:
+            image, pseudolabel_logits, pseudolabel_weights, gt_labels = self.parse_batch_train(batch)
+        else:
+            image, pseudolabel_logits, pseudolabel_weights = self.parse_batch_train(batch)
 
         prec = self.cfg.TRAINER.Caption.PREC
         if prec == "amp":
             assert(False) #this doesn't support multilabel loss
             with autocast():
-                output_g, output, _, _ = self.model(image)
+                output_g, output, _, _, _, _, _ = self.model(image)
                 loss = F.cross_entropy(output, label)
             self.optim.zero_grad()
             self.scaler.scale(loss).backward()
             self.scaler.step(self.optim)
             self.scaler.update()
         else:
-            output_g, output, _, _ = self.model(image)
-            loss = self.compute_loss(output, pseudolabel_logits, pseudolabel_weights)
+            output_g, output, _, _, positive_textemb_pair_cossims, negative_textemb_pair_cossims, evidentiary_textemb_pair_cossims = self.model(image)
+            loss, erm_loss, cooccurrence_loss = self.compute_loss(output, pseudolabel_logits, pseudolabel_weights, positive_textemb_pair_cossims, negative_textemb_pair_cossims, evidentiary_textemb_pair_cossims, gt_labels=gt_labels)
             self.model_backward_and_update(loss)
 
         loss_summary = {
             "loss": loss.item(),
-            # "acc": compute_accuracy(output, label)[0].item(),
+            "erm_loss": erm_loss.item(),
+            "cooccurrence_loss": cooccurrence_loss.item()
         }
 
         if (self.batch_idx + 1) == self.num_batches:
@@ -831,10 +870,15 @@ class Caption_tri_wta_soft_pseudolabel(TrainerX):
     def parse_batch_train(self, batch):
         input = batch["img"]
         input = input.to(self.device)
-        idx = batch["idx"]
+        idx = batch["idx"] 
         pseudolabel_logits = self.pseudolabel_logits[idx,:]
         pseudolabel_weights = self.pseudolabel_weights[idx,:]
-        return input, pseudolabel_logits, pseudolabel_weights
+        if self.cfg.USE_GT_LABELS:
+            gt_labels = batch["label"]
+            gt_labels = gt_labels.to(self.device)
+            return input, pseudolabel_logits, pseudolabel_weights, gt_labels
+        else:
+            return input, pseudolabel_logits, pseudolabel_weights
 
     def load_model(self, directory, epoch=None):
         if not directory:

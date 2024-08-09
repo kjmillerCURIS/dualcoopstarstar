@@ -1,15 +1,14 @@
 import os
 import sys
 import numpy as np
+import pickle
 import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
-from harvest_training_gts import TRAINING_GTS_FILENAME_DICT
+from harvest_training_gts import TRAINING_GTS_FILENAME_DICT, TESTING_GTS_FILENAME_DICT
 from compute_initial_pseudolabels import PSEUDOLABEL_LOGITS_FILENAME_DICT
 from compute_initial_cossims import PSEUDOLABEL_COSSIMS_FILENAME_DICT
-from harvest_testing_gts import TESTING_GTS_FILENAME_DICT
-from compute_initial_testing_pseudolabels import PSEUDOLABEL_TESTING_LOGITS_FILENAME_DICT
-from compute_initial_testing_cossims import PSEUDOLABEL_TESTING_COSSIMS_FILENAME_DICT
+from initial_testing_scores_paths import PSEUDOLABEL_TESTING_LOGITS_FILENAME_DICT, PSEUDOLABEL_TESTING_COSSIMS_FILENAME_DICT
 
 
 class DecoderDataset(Dataset):

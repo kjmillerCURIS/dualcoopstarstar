@@ -1,6 +1,6 @@
 #!/bin/bash -l
 
-#$ -N zsclip_ensemble80_COCO
+#$ -N TESTINGDUMP_zsclip_ensemble80_COCO
 
 #$ -m bea
 
@@ -54,7 +54,7 @@ MOD=pos_norm #yes this is used now
 #run_ID=coco2014_partial_tricoop_wta_soft_448_CSC_p0_1-pos200-ctx21_norm
 #partial_prob=0.5
 
-run_ID=zsclip_ensemble80_COCO
+run_ID=TESTINGDUMP_zsclip_ensemble80_COCO
 
 #for SEED in 1 3 5
 for SEED in 1

@@ -26,6 +26,11 @@ from .fixed_prompt_utils import FIXED_PROMPTS_DICT
 _tokenizer = _Tokenizer()
 
 
+HANDCRAFTED_TEMPLATE_POSITIVE = 'a photo of a %s.'
+HANDCRAFTED_TEMPLATE_NEGATIVE = 'a photo without a %s.'
+HANDCRAFTED_TEMPLATE_EVIDENTIARY = 'a photo of a %s.'
+
+
 def load_clip_to_cpu(cfg):
     backbone_name = cfg.MODEL.BACKBONE.NAME
     url = clip._MODELS[backbone_name]
@@ -152,7 +157,23 @@ class PromptLearner(nn.Module):
         self.name_lens = name_lens
         self.class_token_position = cfg.TRAINER.Caption.CLASS_TOKEN_POSITION
 
+        #handcrafted prompts
+        self.tokenized_handcrafted_prompts_positive = torch.cat([clip.tokenize(HANDCRAFTED_TEMPLATE_POSITIVE % classname) for classname in classnames])
+        self.tokenized_handcrafted_prompts_negative = torch.cat([clip.tokenize(HANDCRAFTED_TEMPLATE_NEGATIVE % classname) for classname in classnames])
+        self.tokenized_handcrafted_prompts_evidentiary = torch.cat([clip.tokenize(HANDCRAFTED_TEMPLATE_EVIDENTIARY % classname) for classname in classnames])
+        with torch.no_grad():
+            self.handcrafted_prompts_positive = clip_model.token_embedding(self.tokenized_handcrafted_prompts_positive).type(dtype).cuda()
+            self.handcrafted_prompts_negative = clip_model.token_embedding(self.tokenized_handcrafted_prompts_negative).type(dtype).cuda()
+            self.handcrafted_prompts_evidentiary = clip_model.token_embedding(self.tokenized_handcrafted_prompts_evidentiary).type(dtype).cuda()
+
+        self.tokenized_handcrafted_prompts_positive = self.tokenized_handcrafted_prompts_positive.cuda()
+        self.tokenized_handcrafted_prompts_negative = self.tokenized_handcrafted_prompts_negative.cuda()
+        self.tokenized_handcrafted_prompts_evidentiary = self.tokenized_handcrafted_prompts_evidentiary.cuda()
+
     def forward(self, neg_prompt_wcls=True):
+
+        return self.handcrafted_prompts_evidentiary, self.handcrafted_prompts_positive, self.handcrafted_prompts_negative, self.temperature, self.spatial_T
+
         """
         Returns current learned ctx embeddings, concated with cls word embeddings.
         """
@@ -389,18 +410,27 @@ class DenseCLIP(nn.Module):
         prob_ = torch.nn.functional.softmax(logits * spatial_T.exp(), dim=0)
         logits_pos = torch.sum(logits_pos * prob_, dim=0)
         logits_neg = torch.sum(logits_neg * prob_, dim=0)
-        
-  
+
+        if self.cfg.USE_SOFTMAX:
+            logits_pos = logits_pos / logit_scale_pos
+            logits_neg = logits_neg / logit_scale_neg
 
         logits_ = torch.cat([torch.unsqueeze(logits_neg,1), torch.unsqueeze(logits_pos,1)], dim=1)
         logits_g = torch.cat([torch.unsqueeze(logits_neg_g,1), torch.unsqueeze(logits_pos_g,1)], dim=1)
 
         #collapse into a single logit
-        logits_ = logits_[:,1,:] - logits_[:,0,:]
-        logits_g = logits_g[:,1,:] - logits_g[:,0,:]
+        if self.cfg.NONEG:
+            logits_ = logits_[:,1,:]
+            logits_g = logits_g[:,1,:]
+        else:
+            logits_ = logits_[:,1,:] - logits_[:,0,:]
+            logits_g = logits_g[:,1,:] - logits_g[:,0,:]
         
         if self.cfg.TRAINER.Caption.USE_BIAS:
             logits_ = logits_ + self.prompt_learner.bias #keep it in prompt_learner so it'll be learnable
+
+        if self.cfg.USE_SOFTMAX:
+            logits_ = softlogits2siglogits(self.model.logit_scale.exp() * logits_)
 
         return logits_g, logits_, image_features, text_features
 
@@ -420,7 +450,7 @@ def softlogits2siglogits(softlogits):
 
 
 @TRAINER_REGISTRY.register()
-class Caption_tri_wta_soft_pseudolabel(TrainerX):
+class Caption_tri_wta_soft_handprompts(TrainerX):
     ''' This inherits from TrainerX, however it will NOT look at the label during train-time! '''
 
     @torch.no_grad()
@@ -478,38 +508,38 @@ class Caption_tri_wta_soft_pseudolabel(TrainerX):
             data_loader = self.test_loader
             print("Do evaluation on test set")
 
-        if self.cfg.COMPUTE_ZSCLIP:
-            text_embeddings = self.get_initializing_text_embeddings()
+#        if self.cfg.COMPUTE_ZSCLIP:
+#            text_embeddings = self.get_initializing_text_embeddings()
 
-        if self.cfg.COMPUTE_ZSCLIP:
-            cossims_dict = {}
-            logits_dict = {}
+#        if self.cfg.COMPUTE_ZSCLIP:
+#            cossims_dict = {}
+#            logits_dict = {}
 
         for batch_idx, batch in enumerate(tqdm(data_loader)):
             input, label = self.parse_batch_test(batch)
             if self.cfg.COMPUTE_RANDOM_CHANCE:
                 logits = torch.tensor(np.random.uniform(0,1,size=label.shape))
-            elif self.cfg.COMPUTE_ZSCLIP:
-                image_embeddings = self.clip_model.encode_image(input)
-                assert(len(image_embeddings.shape) == 2)
-                assert(image_embeddings.shape[0] == input.shape[0])
-                image_embeddings = image_embeddings / image_embeddings.norm(dim=-1, keepdim=True)
-                cossims = image_embeddings @ text_embeddings.t()
-                impaths = batch['impath']
-                for k, v in zip(impaths, cossims.cpu().numpy()):
-                    assert(isinstance(k, str))
-                    assert(k not in cossims_dict)
-                    cossims_dict[k] = v
-
-                if self.cfg.ZSCLIP_USE_COSSIM:
-                    logits = cossims
-                else:
-                    softlogits = self.clip_model.logit_scale.exp() * cossims
-                    logits = softlogits2siglogits(softlogits)
-                    for k, v in zip(impaths, logits.cpu().numpy()):
-                        assert(isinstance(k, str))
-                        assert(k not in logits_dict)
-                        logits_dict[k] = v
+#            elif self.cfg.COMPUTE_ZSCLIP:
+#                image_embeddings = self.clip_model.encode_image(input)
+#                assert(len(image_embeddings.shape) == 2)
+#                assert(image_embeddings.shape[0] == input.shape[0])
+#                image_embeddings = image_embeddings / image_embeddings.norm(dim=-1, keepdim=True)
+#                cossims = image_embeddings @ text_embeddings.t()
+#                impaths = batch['impath']
+#                for k, v in zip(impaths, cossims.cpu().numpy()):
+#                    assert(isinstance(k, str))
+#                    assert(k not in cossims_dict)
+#                    cossims_dict[k] = v
+#
+#                if self.cfg.ZSCLIP_USE_COSSIM:
+#                    logits = cossims
+#                else:
+#                    softlogits = self.clip_model.logit_scale.exp() * cossims
+#                    logits = softlogits2siglogits(softlogits)
+#                    for k, v in zip(impaths, logits.cpu().numpy()):
+#                        assert(isinstance(k, str))
+#                        assert(k not in logits_dict)
+#                        logits_dict[k] = v
 
             else:
                 _, logits, _, _ = self.model_inference(input)
@@ -528,12 +558,12 @@ class Caption_tri_wta_soft_pseudolabel(TrainerX):
         with open(results_filename, 'wb') as f:
             pickle.dump(results, f)
 
-        if self.cfg.COMPUTE_ZSCLIP:
-            with open(os.path.join(results_dir, 'testing_cossims_dict.pkl'), 'wb') as f:
-                pickle.dump(cossims_dict, f)
-
-            with open(os.path.join(results_dir, 'testing_logits_dict.pkl'), 'wb') as f:
-                pickle.dump(logits_dict, f)
+#        if self.cfg.COMPUTE_ZSCLIP:
+#            with open(os.path.join(results_dir, 'testing_cossims_dict.pkl'), 'wb') as f:
+#                pickle.dump(cossims_dict, f)
+#
+#            with open(os.path.join(results_dir, 'testing_logits_dict.pkl'), 'wb') as f:
+#                pickle.dump(logits_dict, f)
 
         for k, v in results.items():
             if k != 'mAP':
@@ -563,10 +593,10 @@ class Caption_tri_wta_soft_pseudolabel(TrainerX):
             # CLIP's default precision is fp16
             clip_model.float()
 
-        if self.cfg.COMPUTE_ZSCLIP:
-            self.clip_model = clip_model
-            self.clip_model.to(self.device)
-            return
+#        if self.cfg.COMPUTE_ZSCLIP:
+#            self.clip_model = clip_model
+#            self.clip_model.to(self.device)
+#            return
 
         print("Building custom CLIP")
         # self.model = CustomCLIP(cfg, classnames, clip_model)
@@ -686,10 +716,10 @@ class Caption_tri_wta_soft_pseudolabel(TrainerX):
         texts = [clip.tokenize(texts_sub) for texts_sub in texts]
         with torch.no_grad():
             texts = torch.cat(texts).to(self.device)
-            if self.cfg.COMPUTE_ZSCLIP:
-                fixed_text_embeddings = self.clip_model.encode_text(texts)
-            else:
-                fixed_text_embeddings = self.model.model.encode_text(texts)
+#            if self.cfg.COMPUTE_ZSCLIP:
+#                fixed_text_embeddings = self.clip_model.encode_text(texts)
+#            else:
+            fixed_text_embeddings = self.model.model.encode_text(texts)
 
             fixed_text_embeddings = torch.reshape(fixed_text_embeddings, (len(classnames), len(templates), -1))
             fixed_text_embeddings = fixed_text_embeddings / fixed_text_embeddings.norm(dim=-1, keepdim=True)

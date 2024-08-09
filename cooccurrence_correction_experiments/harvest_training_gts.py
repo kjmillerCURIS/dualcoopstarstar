@@ -21,6 +21,7 @@ CONFIG_FILE_DICT = {'COCO2014_partial' : os.path.expanduser('~/data/dualcoopstar
 MOD_DICT = {'COCO2014_partial' : 'pos_norm', 'nuswide_partial' : 'pos200', 'VOC2007_partial' : 'pos200'}
 DATA_ROOT = os.path.expanduser('~/data/vislang-domain-exploration-data/dualcoopstarstar-data')
 TRAINING_GTS_FILENAME_DICT = {'COCO2014_partial' : os.path.expanduser('~/data/vislang-domain-exploration-data/dualcoopstarstar-data/cooccurrence_correction_experiments/mscoco_training_gts.pkl'), 'nuswide_partial' : os.path.expanduser('~/data/vislang-domain-exploration-data/dualcoopstarstar-data/cooccurrence_correction_experiments/nuswide_training_gts.pkl'), 'VOC2007_partial' : os.path.expanduser('~/data/vislang-domain-exploration-data/dualcoopstarstar-data/cooccurrence_correction_experiments/voc2007_training_gts.pkl')}
+TESTING_GTS_FILENAME_DICT = {'COCO2014_partial' : os.path.expanduser('~/data/vislang-domain-exploration-data/dualcoopstarstar-data/cooccurrence_correction_experiments/mscoco_testing_gts.pkl'), 'nuswide_partial' : os.path.expanduser('~/data/vislang-domain-exploration-data/dualcoopstarstar-data/cooccurrence_correction_experiments/nuswide_testing_gts.pkl'), 'VOC2007_partial' : os.path.expanduser('~/data/vislang-domain-exploration-data/dualcoopstarstar-data/cooccurrence_correction_experiments/voc2007_testing_gts.pkl')}
 
 
 def get_cfg(dataset_name, partial_prob=1.0, random_seed=1):
@@ -121,9 +122,26 @@ def harvest_training_gts(dataset_name):
         pickle.dump(labels, f)
 
 
+#d[impath] = labels
+#labels will be in {0, 1}^N
+def harvest_testing_gts(dataset_name):
+    assert(dataset_name in TESTING_GTS_FILENAME_DICT)
+    dm = get_data_manager(dataset_name)
+    labels = {}
+    for item in tqdm(dm.dataset.test):
+        assert(item.impath not in labels)
+        assert(item.label.shape == (NUM_CLASSES_DICT[dataset_name],))
+        assert(np.all((item.label == 1) | (item.label == -1)))
+        labels[item.impath] = np.maximum(item.label, 0) #-1 ==> 0, +1 ==> 1
+
+    with open(TESTING_GTS_FILENAME_DICT[dataset_name], 'wb') as f:
+        pickle.dump(labels, f)
+
+
 def usage():
     print('Usage: python harvest_training_gts.py <dataset_name>')
 
 
 if __name__ == '__main__':
-    harvest_training_gts(*(sys.argv[1:]))
+    #harvest_training_gts(*(sys.argv[1:]))
+    harvest_testing_gts(*(sys.argv[1:]))
