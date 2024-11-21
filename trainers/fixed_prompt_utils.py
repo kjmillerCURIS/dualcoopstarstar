@@ -3,6 +3,7 @@ import sys
 
 
 FIXED_PROMPTS_DICT = {}
+FIXED_PROMPTS_DICT['classname_only'] = ["{}"]
 FIXED_PROMPTS_DICT['single_standard'] = ["a photo of a {}."]
 FIXED_PROMPTS_DICT['ensemble_80'] = [
     "a bad photo of a {}.",

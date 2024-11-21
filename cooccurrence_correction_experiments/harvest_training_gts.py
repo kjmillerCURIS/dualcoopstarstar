@@ -2,6 +2,7 @@ import os
 import sys
 import numpy as np
 import pickle
+import torch
 from tqdm import tqdm
 from yacs.config import CfgNode as CN
 sys.path.append('.')
@@ -10,21 +11,23 @@ from dassl.config import get_cfg_default
 from dassl.data import DataManager
 import datasets.coco2014_partial
 import datasets.nuswide_trainset_gt
+import datasets.nuswideTheirVersion
 import datasets.voc2007_partial
 sys.path.pop()
 sys.path.pop()
 
 
-NUM_CLASSES_DICT = {'COCO2014_partial' : 80, 'nuswide_partial' : 81, 'VOC2007_partial' : 20}
-DATASET_CONFIG_FILE_DICT = {'COCO2014_partial' : os.path.expanduser('~/data/dualcoopstarstar/configs/datasets/coco2014_partial.yaml'), 'nuswide_partial' : os.path.expanduser('~/data/dualcoopstarstar/configs/datasets/nuswide_partial.yaml'), 'VOC2007_partial' : os.path.expanduser('~/data/dualcoopstarstar/configs/datasets/voc2007_partial.yaml')}
-CONFIG_FILE_DICT = {'COCO2014_partial' : os.path.expanduser('~/data/dualcoopstarstar/configs/trainers/Caption_tri_wta_soft_pseudolabel/rn101.yaml'), 'nuswide_partial' : os.path.expanduser('~/data/dualcoopstarstar/configs/trainers/Caption_tri_wta_soft_pseudolabel/rn101_nus.yaml'), 'VOC2007_partial' : os.path.expanduser('~/data/dualcoopstarstar/configs/trainers/Caption_tri_wta_soft_pseudolabel/rn101_bn96.yaml')}
-MOD_DICT = {'COCO2014_partial' : 'pos_norm', 'nuswide_partial' : 'pos200', 'VOC2007_partial' : 'pos200'}
+NUM_CLASSES_DICT = {'COCO2014_partial' : 80, 'nuswide_partial' : 81, 'VOC2007_partial' : 20, 'nuswideTheirVersion_partial' : 81}
+DATASET_CONFIG_FILE_DICT = {'COCO2014_partial' : os.path.expanduser('~/data/dualcoopstarstar/configs/datasets/coco2014_partial.yaml'), 'nuswide_partial' : os.path.expanduser('~/data/dualcoopstarstar/configs/datasets/nuswide_partial.yaml'), 'VOC2007_partial' : os.path.expanduser('~/data/dualcoopstarstar/configs/datasets/voc2007_partial.yaml'), 'nuswideTheirVersion_partial' : os.path.expanduser('~/data/dualcoopstarstar/configs/datasets/nuswideTheirVersion_partial.yaml')}
+CONFIG_FILE_DICT = {'COCO2014_partial' : os.path.expanduser('~/data/dualcoopstarstar/configs/trainers/Caption_tri_wta_soft_pseudolabel/rn101.yaml'), 'nuswide_partial' : os.path.expanduser('~/data/dualcoopstarstar/configs/trainers/Caption_tri_wta_soft_pseudolabel/rn101_nus.yaml'), 'VOC2007_partial' : os.path.expanduser('~/data/dualcoopstarstar/configs/trainers/Caption_tri_wta_soft_pseudolabel/rn101_bn96.yaml'), 'nuswideTheirVersion_partial' : os.path.expanduser('~/data/dualcoopstarstar/configs/trainers/Caption_tri_wta_soft_pseudolabel/rn101_nus.yaml')}
+CONFIG_FILE_DICT_TAIDPT = {'COCO2014_partial' : os.path.expanduser('~/data/dualcoopstarstar/configs/trainers/Caption_distill_double/rn50_coco2014.yaml'), 'VOC2007_partial' : os.path.expanduser('~/data/dualcoopstarstar/configs/trainers/Caption_distill_double/rn50_voc2007.yaml'), 'nuswideTheirVersion_partial' : os.path.expanduser('~/data/dualcoopstarstar/configs/trainers/Caption_distill_double/rn50_nuswide.yaml')}
+MOD_DICT = {'COCO2014_partial' : 'pos_norm', 'nuswide_partial' : 'pos200', 'VOC2007_partial' : 'pos200', 'nuswideTheirVersion_partial' : 'pos200'}
 DATA_ROOT = os.path.expanduser('~/data/vislang-domain-exploration-data/dualcoopstarstar-data')
 TRAINING_GTS_FILENAME_DICT = {'COCO2014_partial' : os.path.expanduser('~/data/vislang-domain-exploration-data/dualcoopstarstar-data/cooccurrence_correction_experiments/mscoco_training_gts.pkl'), 'nuswide_partial' : os.path.expanduser('~/data/vislang-domain-exploration-data/dualcoopstarstar-data/cooccurrence_correction_experiments/nuswide_training_gts.pkl'), 'VOC2007_partial' : os.path.expanduser('~/data/vislang-domain-exploration-data/dualcoopstarstar-data/cooccurrence_correction_experiments/voc2007_training_gts.pkl')}
-TESTING_GTS_FILENAME_DICT = {'COCO2014_partial' : os.path.expanduser('~/data/vislang-domain-exploration-data/dualcoopstarstar-data/cooccurrence_correction_experiments/mscoco_testing_gts.pkl'), 'nuswide_partial' : os.path.expanduser('~/data/vislang-domain-exploration-data/dualcoopstarstar-data/cooccurrence_correction_experiments/nuswide_testing_gts.pkl'), 'VOC2007_partial' : os.path.expanduser('~/data/vislang-domain-exploration-data/dualcoopstarstar-data/cooccurrence_correction_experiments/voc2007_testing_gts.pkl')}
+TESTING_GTS_FILENAME_DICT = {'COCO2014_partial' : os.path.expanduser('~/data/vislang-domain-exploration-data/dualcoopstarstar-data/cooccurrence_correction_experiments/mscoco_testing_gts.pkl'), 'nuswide_partial' : os.path.expanduser('~/data/vislang-domain-exploration-data/dualcoopstarstar-data/cooccurrence_correction_experiments/nuswide_testing_gts.pkl'), 'VOC2007_partial' : os.path.expanduser('~/data/vislang-domain-exploration-data/dualcoopstarstar-data/cooccurrence_correction_experiments/voc2007_testing_gts.pkl'), 'nuswideTheirVersion_partial' : os.path.expanduser('~/data/vislang-domain-exploration-data/dualcoopstarstar-data/cooccurrence_correction_experiments/nuswideTheirVersion_testing_gts.pkl')}
 
 
-def get_cfg(dataset_name, partial_prob=1.0, random_seed=1):
+def get_cfg(dataset_name, partial_prob=1.0, random_seed=1, model_type=None, is_taidpt=False):
 
     #setup_cfg():
     cfg = get_cfg_default()
@@ -79,7 +82,10 @@ def get_cfg(dataset_name, partial_prob=1.0, random_seed=1):
     cfg.merge_from_file(DATASET_CONFIG_FILE_DICT[dataset_name])
 
     #merge_from_file() config:
-    cfg.merge_from_file(CONFIG_FILE_DICT[dataset_name])
+    if is_taidpt:
+        cfg.merge_from_file(CONFIG_FILE_DICT_TAIDPT[dataset_name])
+    else:
+        cfg.merge_from_file(CONFIG_FILE_DICT[dataset_name])
 
     #reset_cfg():
     cfg.DATASET.ROOT = DATA_ROOT
@@ -95,14 +101,23 @@ def get_cfg(dataset_name, partial_prob=1.0, random_seed=1):
     cfg.TRAIN.PSEUDOLABEL_UPDATE_GAUSSIAN_BANDWIDTH = 0.2
     cfg.TRAIN.PSEUDOLABEL_UPDATE_STEPSIZE = 0.0
 
+    if model_type is not None:
+        cfg.MODEL.BACKBONE.NAME = model_type.replace('ViT-B', 'ViT-B/').replace('ViT-L', 'ViT-L/').replace('14336px', '14@336px')
+        if model_type == 'ViT-L14336px':
+            cfg.INPUT.SIZE = (336, 336)
+        elif 'ViT-B' in model_type or 'ViT-L' in model_type:
+            cfg.INPUT.SIZE = (224, 224)
+
     cfg.freeze()
 
     return cfg
 
 
-def get_data_manager(dataset_name):
-    cfg = get_cfg(dataset_name)
-    dm = DataManager(cfg)
+def get_data_manager(dataset_name, cfg=None, is_taidpt=False):
+    if cfg is None:
+        cfg = get_cfg(dataset_name, is_taidpt=is_taidpt)
+
+    dm = DataManager(cfg, skip_train=(dataset_name=='nuswideTheirVersion_partial'))
     return dm
 
 
@@ -126,13 +141,22 @@ def harvest_training_gts(dataset_name):
 #labels will be in {0, 1}^N
 def harvest_testing_gts(dataset_name):
     assert(dataset_name in TESTING_GTS_FILENAME_DICT)
+    print(TESTING_GTS_FILENAME_DICT[dataset_name])
     dm = get_data_manager(dataset_name)
     labels = {}
     for item in tqdm(dm.dataset.test):
         assert(item.impath not in labels)
-        assert(item.label.shape == (NUM_CLASSES_DICT[dataset_name],))
-        assert(np.all((item.label == 1) | (item.label == -1)))
-        labels[item.impath] = np.maximum(item.label, 0) #-1 ==> 0, +1 ==> 1
+        label = item.label
+        assert(label.shape == (NUM_CLASSES_DICT[dataset_name],))
+        if isinstance(label, torch.Tensor):
+            label = label.numpy()
+
+        if dataset_name == 'nuswideTheirVersion_partial':
+            assert(np.all((label == 1) | (label == 0)))
+        else:
+            assert(np.all((label == 1) | (label == -1)))
+
+        labels[item.impath] = np.maximum(label, 0) #-1 ==> 0, +1 ==> 1
 
     with open(TESTING_GTS_FILENAME_DICT[dataset_name], 'wb') as f:
         pickle.dump(labels, f)

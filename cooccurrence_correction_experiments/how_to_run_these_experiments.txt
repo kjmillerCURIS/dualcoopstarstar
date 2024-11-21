@@ -1,0 +1,6 @@
+#input and output locations
+#harvest gts
+#plot cost matrices
+#qsub get-the-initial-pseudolabel-logits
+#run-submission-script-for-grad-descents
+#plot-results

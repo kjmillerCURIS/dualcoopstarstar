@@ -62,7 +62,8 @@ class DataManager:
         cfg,
         custom_tfm_train=None,
         custom_tfm_test=None,
-        dataset_wrapper=None
+        dataset_wrapper=None,
+        skip_train=False
     ):
         # Load dataset
         dataset = build_dataset(cfg)
@@ -86,31 +87,46 @@ class DataManager:
             dataset_wrapper_ = DatasetWrapper_caption
         else:
             dataset_wrapper_ = None
-        train_loader_x = build_data_loader(
-            cfg,
-            sampler_type=cfg.DATALOADER.TRAIN_X.SAMPLER,
-            data_source=dataset.train_x,
-            batch_size=cfg.DATALOADER.TRAIN_X.BATCH_SIZE,
-            n_domain=cfg.DATALOADER.TRAIN_X.N_DOMAIN,
-            n_ins=cfg.DATALOADER.TRAIN_X.N_INS,
-            tfm=tfm_train,
-            is_train=True,
-            dataset_wrapper=dataset_wrapper_,
-        )
-        
-        #build a "complete" version of training dataloader that doesn't drop last batch
-        train_loader_x_complete = build_data_loader(
-            cfg,
-            sampler_type=cfg.DATALOADER.TRAIN_X.SAMPLER,
-            data_source=dataset.train_x,
-            batch_size=cfg.DATALOADER.TRAIN_X.BATCH_SIZE,
-            n_domain=cfg.DATALOADER.TRAIN_X.N_DOMAIN,
-            n_ins=cfg.DATALOADER.TRAIN_X.N_INS,
-            tfm=tfm_train,
-            is_train=True,
-            dataset_wrapper=dataset_wrapper_,
-            is_complete=True,
-        )
+
+        if not skip_train:
+            train_loader_x = build_data_loader(
+                cfg,
+                sampler_type=cfg.DATALOADER.TRAIN_X.SAMPLER,
+                data_source=dataset.train_x,
+                batch_size=cfg.DATALOADER.TRAIN_X.BATCH_SIZE,
+                n_domain=cfg.DATALOADER.TRAIN_X.N_DOMAIN,
+                n_ins=cfg.DATALOADER.TRAIN_X.N_INS,
+                tfm=tfm_train,
+                is_train=True,
+                dataset_wrapper=dataset_wrapper_,
+            )
+            
+            #build a "complete" version of training dataloader that doesn't drop last batch
+            train_loader_x_complete = build_data_loader(
+                cfg,
+                sampler_type=cfg.DATALOADER.TRAIN_X.SAMPLER,
+                data_source=dataset.train_x,
+                batch_size=cfg.DATALOADER.TRAIN_X.BATCH_SIZE,
+                n_domain=cfg.DATALOADER.TRAIN_X.N_DOMAIN,
+                n_ins=cfg.DATALOADER.TRAIN_X.N_INS,
+                tfm=tfm_train,
+                is_train=True,
+                dataset_wrapper=dataset_wrapper_,
+                is_complete=True,
+            )
+            
+            train_loader_x_complete_noaug = build_data_loader(
+                cfg,
+                sampler_type=cfg.DATALOADER.TRAIN_X.SAMPLER,
+                data_source=dataset.train_x,
+                batch_size=cfg.DATALOADER.TRAIN_X.BATCH_SIZE,
+                n_domain=cfg.DATALOADER.TRAIN_X.N_DOMAIN,
+                n_ins=cfg.DATALOADER.TRAIN_X.N_INS,
+                tfm=tfm_test,
+                is_train=True,
+                dataset_wrapper=dataset_wrapper_,
+                is_complete=True,
+            )
 
         # Build train_loader_u
         train_loader_u = None
@@ -169,8 +185,11 @@ class DataManager:
 
         # Dataset and data-loaders
         self.dataset = dataset
-        self.train_loader_x = train_loader_x
-        self.train_loader_x_complete = train_loader_x_complete
+        if not skip_train:
+            self.train_loader_x = train_loader_x
+            self.train_loader_x_complete = train_loader_x_complete
+            self.train_loader_x_complete_noaug = train_loader_x_complete_noaug
+
         self.train_loader_u = train_loader_u
         self.val_loader = val_loader
         self.test_loader = test_loader

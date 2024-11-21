@@ -26,8 +26,11 @@ from .fixed_prompt_utils import FIXED_PROMPTS_DICT
 _tokenizer = _Tokenizer()
 
 
-def load_clip_to_cpu(cfg):
+def load_clip_to_cpu(cfg, model_type=None):
     backbone_name = cfg.MODEL.BACKBONE.NAME
+    if model_type is not None:
+        backbone_name = model_type
+
     url = clip._MODELS[backbone_name]
     model_path = clip._download(url)
 

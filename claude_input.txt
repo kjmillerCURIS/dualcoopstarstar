@@ -1,0 +1,5 @@
+cat
+dog and fish
+dog and person
+fish and person and goat
+bear and hot dog

@@ -1,0 +1,7 @@
+1. Run generate_compound_prompts_and_claude_inputs.py
+2. Take the claude-input file that it generates (ending in "_claude_inputs.txt") and give it as an attachment to the Claude website (Sonnet 3.5) with the following prompt:
+
+"I generated prompts for me to probe CLIP on <DATASET>. Could you generate natural sentences that I could add based on the attached prompts? We should aim for broad coverage across the various categories and combinations present in the dataset. The sentences need not be fancy."
+
+
+3. Take outputs, copy the generated compound-prompts file (ending in "_simple_single_and_compound_prompts_without_claude.txt"), and add the claude outputs to it manually. Rename the copy to end in "_compound_prompts.txt".
